@@ -6,6 +6,7 @@ import { InvertColorsProvider, useInvertColors } from "@/contexts/InvertColorsCo
 import { HapticProvider } from "@/contexts/HapticContext";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import { ReadingPositionProvider } from "@/contexts/ReadingPositionContext";
+import { FontSizeProvider } from "@/contexts/FontSizeContext";
 import * as SystemUI from "expo-system-ui";
 import * as NavigationBar from "expo-navigation-bar";
 import * as SplashScreen from "expo-splash-screen";
@@ -55,13 +56,15 @@ export default function RootLayout() {
 
 	return (
 		<InvertColorsProvider>
-			<TranslationProvider>
-				<ReadingPositionProvider>
-					<HapticProvider>
-						<RootNavigation />
-					</HapticProvider>
-				</ReadingPositionProvider>
-			</TranslationProvider>
+			<FontSizeProvider>
+				<TranslationProvider>
+					<ReadingPositionProvider>
+						<HapticProvider>
+							<RootNavigation />
+						</HapticProvider>
+					</ReadingPositionProvider>
+				</TranslationProvider>
+			</FontSizeProvider>
 		</InvertColorsProvider>
 	);
 }

@@ -166,17 +166,17 @@ bun test --watch   # Watch mode during development
 **Goal**: User preferences and final UX polish.
 
 ### Tasks
-- [ ] Create `contexts/FontSizeContext.tsx` — adjustable size (range n(14)–n(28)), persisted
-- [ ] Create `app/settings/font-size.tsx` — size selector with preview
-- [ ] Add invert colors toggle on settings page
+- [x] Create `contexts/FontSizeContext.tsx` — adjustable size (range n(14)–n(28)), persisted
+- [x] Create `app/settings/font-size.tsx` — size selector with preview
+- [x] Add invert colors toggle on settings page
+- [x] Update `VerseText` to use FontSizeContext
+- [x] Add `FontSizeProvider` to root layout
+- [x] Hide status bar and navigation bar (full-screen)
+- [x] Test: `contexts/__tests__/FontSizeContext.test.tsx` — persists and restores font size, clamps to min/max
 - [ ] Add haptic feedback toggle on settings page
-- [ ] Add `components/Navbar.tsx` — bottom tab bar styled for Light Phone
-- [ ] Add `components/CustomScrollView.tsx` — scroll position indicator
 - [ ] Persist scroll position within a chapter
-- [ ] Hide status bar and navigation bar (full-screen)
 - [ ] Test with large font sizes for accessibility
 - [ ] Test RTL translations (direction from API response)
-- [ ] Test: `contexts/__tests__/FontSizeContext.test.tsx` — persists and restores font size
 
 ### Acceptance
 - Font size adjustable and persists
@@ -248,5 +248,5 @@ Phase 7 (Build Pipeline) — can start after Phase 1, finalize after Phase 6
 | 3. Navigation | ✅ Complete |
 | 4. Translation Selector | ✅ Complete |
 | 5. Offline Downloads | ✅ Complete |
-| 6. Settings & Polish | ⬜ Not started |
+| 6. Settings & Polish | 🟡 In progress (haptic toggle, scroll persist, RTL remaining) |
 | 7. Build Pipeline | 🟡 In progress (workflow created, pending first run) |
