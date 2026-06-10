@@ -87,7 +87,7 @@ jobs:
           echo "apk_name=light-bible-${VERSION}.apk" >> "$GITHUB_OUTPUT"
 
       - name: Download APK artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: light-bible-apk
 
