@@ -159,9 +159,9 @@ function parseEsvPassage(text: string): ChapterContentItem[] {
 		}
 	}
 
-	// Add copyright as final heading
+	// Add copyright as final item
 	items.push({
-		type: "heading",
+		type: "copyright",
 		content: [ESV_COPYRIGHT],
 	});
 

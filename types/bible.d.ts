@@ -36,6 +36,7 @@ export interface BooksResponse {
 export type ChapterContentItem =
 	| { type: "verse"; number: number; content: VerseContent[] }
 	| { type: "heading"; content: string[] }
+	| { type: "copyright"; content: string[] }
 	| { type: "line_break" };
 
 export type VerseContent = string | { noteId: number } | { lineBreak: true };

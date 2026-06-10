@@ -15,20 +15,22 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.3"
 
       - run: bun install --frozen-lockfile
 
-      # Check for known vulnerabilities in dependencies
+      # Fail workflow on known vulnerabilities
       - name: Run npm audit
         run: npx audit-ci --config audit-ci.json
-        continue-on-error: true
 
-      # Output audit report
+      # Generate report artifact (non-blocking)
       - name: Generate audit report
+        if: always()
         run: bun pm audit 2>&1 | tee audit-report.txt || true
 
       - name: Upload audit report
