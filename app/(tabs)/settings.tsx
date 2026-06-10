@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, BackHandler } from "react-native";
 import { Header } from "@/components/Header";
 import { SelectorButton } from "@/components/SelectorButton";
 import { StyledText } from "@/components/StyledText";
@@ -44,6 +44,11 @@ export default function SettingsScreen() {
 					value="Manage"
 					href="/settings/downloads"
 				/>
+				<SelectorButton
+					label="ESV API Key"
+					value="Configure"
+					href="/settings/esv-key"
+				/>
 				<HapticPressable
 					onPress={() => setInvertColors(!invertColors)}
 					style={[styles.toggle, { borderBottomColor: borderColor }]}
@@ -61,6 +66,12 @@ export default function SettingsScreen() {
 					<StyledText style={styles.toggleValue}>
 						{hapticEnabled ? "On" : "Off"}
 					</StyledText>
+				</HapticPressable>
+				<HapticPressable
+					onPress={() => BackHandler.exitApp()}
+					style={styles.exitButton}
+				>
+					<StyledText style={styles.exitText}>Exit App</StyledText>
 				</HapticPressable>
 			</View>
 		</View>
@@ -89,5 +100,14 @@ const styles = StyleSheet.create({
 	toggleValue: {
 		fontSize: n(16),
 		opacity: 0.6,
+	},
+	exitButton: {
+		marginTop: n(32),
+		paddingVertical: n(14),
+		alignItems: "center",
+	},
+	exitText: {
+		fontSize: n(16),
+		opacity: 0.5,
 	},
 });

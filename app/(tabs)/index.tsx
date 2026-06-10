@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { View, StyleSheet, PanResponder } from "react-native";
 import { ChapterView } from "@/components/ChapterView";
+import { ChapterPicker } from "@/components/ChapterPicker";
 import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useReadingPosition } from "@/contexts/ReadingPositionContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { getBooks, getChapter } from "@/utils/bible";
-import { useRouter } from "expo-router";
 import { n } from "@/utils/scaling";
 import type { Book } from "@/types/bible";
 
@@ -16,16 +16,14 @@ export default function ReadScreen() {
 	const { position, setPosition } = useReadingPosition();
 	const { invertColors } = useInvertColors();
 	const [books, setBooks] = useState<Book[]>([]);
-	const router = useRouter();
+	const [showChapterPicker, setShowChapterPicker] = useState(false);
 
-	// Load default translation
 	useEffect(() => {
 		if (!translationId) {
 			setTranslationId("BSB");
 		}
 	}, [translationId, setTranslationId]);
 
-	// Load books list
 	useEffect(() => {
 		if (!translationId) return;
 		getBooks(translationId)
@@ -38,7 +36,6 @@ export default function ReadScreen() {
 			.catch(() => {});
 	}, [translationId]);
 
-	// Prefetch adjacent chapters
 	useEffect(() => {
 		if (!translationId || !position || books.length === 0) return;
 		const { next, prev } = getAdjacentPositions(books, position.bookId, position.chapter);
@@ -68,7 +65,6 @@ export default function ReadScreen() {
 		})
 	).current;
 
-	// Update panResponder callbacks when dependencies change
 	useEffect(() => {
 		panResponder.panHandlers.onMoveShouldSetResponder = undefined;
 	}, [navigateChapter]);
@@ -77,6 +73,12 @@ export default function ReadScreen() {
 	const headerTitle = currentBook
 		? `${currentBook.commonName} ${position?.chapter}`
 		: "Bible";
+
+	const handleChapterSelect = (chapter: number) => {
+		if (!position) return;
+		setPosition({ bookId: position.bookId, chapter });
+		setShowChapterPicker(false);
+	};
 
 	if (!translationId || !position) {
 		return (
@@ -91,15 +93,27 @@ export default function ReadScreen() {
 			<Header
 				headerTitle={headerTitle}
 				hideBackButton
-				onTitlePress={() => router.navigate("/(tabs)/books")}
+				rightIcon={showChapterPicker ? "close" : "list"}
+				onRightIconPress={() => setShowChapterPicker(!showChapterPicker)}
+				onTitlePress={() => setShowChapterPicker(!showChapterPicker)}
 			/>
-			<View style={styles.content} {...panResponder.panHandlers}>
-				<ChapterView
-					translationId={translationId}
-					bookId={position.bookId}
-					chapter={position.chapter}
-				/>
-			</View>
+			{showChapterPicker && currentBook ? (
+				<View style={styles.content}>
+					<ChapterPicker
+						bookName={currentBook.commonName}
+						numberOfChapters={currentBook.numberOfChapters}
+						onSelect={handleChapterSelect}
+					/>
+				</View>
+			) : (
+				<View style={styles.content} {...panResponder.panHandlers}>
+					<ChapterView
+						translationId={translationId}
+						bookId={position.bookId}
+						chapter={position.chapter}
+					/>
+				</View>
+			)}
 		</View>
 	);
 }

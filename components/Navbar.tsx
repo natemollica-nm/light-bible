@@ -39,7 +39,7 @@ export function Navbar({ tabsConfig, currentScreenName, navigation }: NavbarProp
 					>
 						<MaterialIcons
 							name={tab.iconName}
-							size={n(48)}
+							size={n(32)}
 							color={isActive ? activeColor : inactiveColor}
 						/>
 					</HapticPressable>
