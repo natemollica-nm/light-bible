@@ -62,19 +62,19 @@ bun test --watch   # Watch mode during development
 **Goal**: Fetch and display Bible text from HelloAO API.
 
 ### Tasks
-- [ ] Create `types/bible.d.ts` with Translation, Book, Chapter types
-- [ ] Create `utils/bibleApi.ts` — fetch translations, books, chapters from HelloAO
-- [ ] Create `utils/bibleCache.ts` — AsyncStorage read-through cache
-- [ ] Create `utils/bible.ts` — unified interface (cache → API fallback)
-- [ ] Create `contexts/TranslationContext.tsx` — selected translation ID, persisted
-- [ ] Create `contexts/ReadingPositionContext.tsx` — current book/chapter, persisted
-- [ ] Wire reading screen (`app/(tabs)/index.tsx`) to load and display a chapter
-- [ ] Add `components/VerseText.tsx` — renders verse number + text
-- [ ] Add `components/ChapterView.tsx` — scrollable list of verses for a chapter
-- [ ] Test: `utils/__tests__/bibleApi.test.ts` — mock fetch, verify correct URLs and response parsing
-- [ ] Test: `utils/__tests__/bibleCache.test.ts` — cache hit returns stored data, cache miss returns null
-- [ ] Test: `utils/__tests__/bible.test.ts` — uses cache when available, falls back to API, caches result
-- [ ] Test: `components/__tests__/VerseText.test.tsx` — renders verse number and text
+- [x] Create `types/bible.d.ts` with Translation, Book, Chapter types
+- [x] Create `utils/bibleApi.ts` — fetch translations, books, chapters from HelloAO
+- [x] Create `utils/bibleCache.ts` — AsyncStorage read-through cache
+- [x] Create `utils/bible.ts` — unified interface (cache → API fallback)
+- [x] Create `contexts/TranslationContext.tsx` — selected translation ID, persisted
+- [x] Create `contexts/ReadingPositionContext.tsx` — current book/chapter, persisted
+- [x] Wire reading screen (`app/(tabs)/index.tsx`) to load and display a chapter
+- [x] Add `components/VerseText.tsx` — renders verse number + text
+- [x] Add `components/ChapterView.tsx` — scrollable list of verses for a chapter
+- [x] Test: `utils/__tests__/bibleApi.test.ts` — mock fetch, verify correct URLs and response parsing
+- [x] Test: `utils/__tests__/bibleCache.test.ts` — cache hit returns stored data, cache miss returns null
+- [x] Test: `utils/__tests__/bible.test.ts` — uses cache when available, falls back to API, caches result
+- [x] Test: `components/__tests__/VerseText.test.tsx` — renders verse number and text
 - [ ] Test: `components/__tests__/ChapterView.test.tsx` — renders all verses for a chapter
 
 ### Acceptance
@@ -242,7 +242,7 @@ Phase 7 (Build Pipeline) — can start after Phase 1, finalize after Phase 6
 | Phase | Status |
 |-------|--------|
 | 1. Foundation | 🟡 In progress (pending device verification) |
-| 2. API Integration | ⬜ Not started |
+| 2. API Integration | 🟡 In progress (1 test remaining: ChapterView component test) |
 | 3. Navigation | ⬜ Not started |
 | 4. Translation Selector | ⬜ Not started |
 | 5. Offline Downloads | ⬜ Not started |
