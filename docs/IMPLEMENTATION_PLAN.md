@@ -91,16 +91,16 @@ bun test --watch   # Watch mode during development
 **Goal**: Users can navigate between chapters and jump to any book/chapter.
 
 ### Tasks
-- [ ] Implement swipe left/right on reading screen to change chapters
-- [ ] Auto-advance to next book at end of final chapter
-- [ ] Create `components/BookPicker.tsx` — grouped by Old/New Testament
-- [ ] Create `components/ChapterPicker.tsx` — number grid for selected book
-- [ ] Wire `app/(tabs)/books.tsx` with BookPicker → ChapterPicker flow
-- [ ] Tapping a chapter in picker navigates to reading screen at that position
-- [ ] Add `components/Header.tsx` — shows current book + chapter, tap to go to picker
-- [ ] Prefetch adjacent chapters (N-1, N+1) in background after rendering current
-- [ ] Test: `components/__tests__/BookPicker.test.tsx` — renders OT/NT sections, fires onSelect
-- [ ] Test: `components/__tests__/ChapterPicker.test.tsx` — renders correct number of chapters, fires onSelect
+- [x] Implement swipe left/right on reading screen to change chapters
+- [x] Auto-advance to next book at end of final chapter
+- [x] Create `components/BookPicker.tsx` — grouped by Old/New Testament
+- [x] Create `components/ChapterPicker.tsx` — number grid for selected book
+- [x] Wire `app/(tabs)/books.tsx` with BookPicker → ChapterPicker flow
+- [x] Tapping a chapter in picker navigates to reading screen at that position
+- [x] Add `components/Header.tsx` — shows current book + chapter, tap to go to picker
+- [x] Prefetch adjacent chapters (N-1, N+1) in background after rendering current
+- [x] Test: `components/__tests__/BookPicker.test.tsx` — renders OT/NT sections, fires onSelect
+- [x] Test: `components/__tests__/ChapterPicker.test.tsx` — renders correct number of chapters, fires onSelect
 
 ### Acceptance
 - Swipe navigates chapters fluidly
@@ -243,7 +243,7 @@ Phase 7 (Build Pipeline) — can start after Phase 1, finalize after Phase 6
 |-------|--------|
 | 1. Foundation | 🟡 In progress (pending device verification) |
 | 2. API Integration | 🟡 In progress (1 test remaining: ChapterView component test) |
-| 3. Navigation | ⬜ Not started |
+| 3. Navigation | ✅ Complete |
 | 4. Translation Selector | ⬜ Not started |
 | 5. Offline Downloads | ⬜ Not started |
 | 6. Settings & Polish | ⬜ Not started |
