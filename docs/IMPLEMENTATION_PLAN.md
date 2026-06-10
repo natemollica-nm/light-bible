@@ -32,20 +32,20 @@ bun test --watch   # Watch mode during development
 **Goal**: App launches, renders a screen, builds an APK. Test infra set up.
 
 ### Tasks
-- [ ] Create `app/_layout.tsx` with root providers (InvertColors, Haptic)
-- [ ] Create `app/(tabs)/_layout.tsx` with tab navigation (Read, Books, Settings)
-- [ ] Create placeholder screens: `index.tsx`, `books.tsx`, `settings.tsx`
-- [ ] Add `utils/scaling.ts` with `n()` normalization function
-- [ ] Add `components/ContentContainer.tsx` (page wrapper with theme colors)
-- [ ] Add `components/StyledText.tsx` (themed text with PublicSans font)
-- [ ] Add `assets/fonts/PublicSans-Regular.ttf`
-- [ ] Add `contexts/InvertColorsContext.tsx` (black/white toggle, persisted)
-- [ ] Add `contexts/HapticContext.tsx`
-- [ ] Add `plugins/withAndroidTheme.js` (black status bar, navigation bar)
-- [ ] Add `metro.config.js`
-- [ ] Set up Jest + React Native Testing Library (`jest.config.js`, test script in package.json)
-- [ ] Test: `utils/__tests__/scaling.test.ts` — verify `n()` returns normalized values
-- [ ] Test: `components/__tests__/StyledText.test.tsx` — renders children with correct style
+- [x] Create `app/_layout.tsx` with root providers (InvertColors, Haptic)
+- [x] Create `app/(tabs)/_layout.tsx` with tab navigation (Read, Books, Settings)
+- [x] Create placeholder screens: `index.tsx`, `books.tsx`, `settings.tsx`
+- [x] Add `utils/scaling.ts` with `n()` normalization function
+- [x] Add `components/ContentContainer.tsx` (page wrapper with theme colors)
+- [x] Add `components/StyledText.tsx` (themed text with PublicSans font)
+- [x] Add `assets/fonts/PublicSans-Regular.ttf`
+- [x] Add `contexts/InvertColorsContext.tsx` (black/white toggle, persisted)
+- [x] Add `contexts/HapticContext.tsx`
+- [x] Add `plugins/withAndroidTheme.js` (black status bar, navigation bar)
+- [x] Add `metro.config.js`
+- [x] Set up Jest + React Native Testing Library (`jest.config.js`, test script in package.json)
+- [x] Test: `utils/__tests__/scaling.test.ts` — verify `n()` returns normalized values
+- [x] Test: `components/__tests__/StyledText.test.tsx` — renders children with correct style
 - [ ] Verify: `bunx expo run:android` builds and shows tabbed placeholder UI
 
 ### Acceptance
@@ -241,10 +241,10 @@ Phase 7 (Build Pipeline) — can start after Phase 1, finalize after Phase 6
 
 | Phase | Status |
 |-------|--------|
-| 1. Foundation | ⬜ Not started |
+| 1. Foundation | 🟡 In progress (pending device verification) |
 | 2. API Integration | ⬜ Not started |
 | 3. Navigation | ⬜ Not started |
 | 4. Translation Selector | ⬜ Not started |
 | 5. Offline Downloads | ⬜ Not started |
 | 6. Settings & Polish | ⬜ Not started |
-| 7. Build Pipeline | ⬜ Not started |
+| 7. Build Pipeline | 🟡 In progress (workflow created, pending first run) |
