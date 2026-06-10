@@ -243,10 +243,10 @@ Phase 7 (Build Pipeline) — can start after Phase 1, finalize after Phase 6
 
 | Phase | Status |
 |-------|--------|
-| 1. Foundation | 🟡 In progress (pending device verification) |
-| 2. API Integration | 🟡 In progress (1 test remaining: ChapterView component test) |
+| 1. Foundation | ✅ Complete |
+| 2. API Integration | ✅ Complete |
 | 3. Navigation | ✅ Complete |
 | 4. Translation Selector | ✅ Complete |
 | 5. Offline Downloads | ✅ Complete |
 | 6. Settings & Polish | ✅ Complete |
-| 7. Build Pipeline | 🟡 In progress (pending first pipeline run + Obtainium verification) |
+| 7. Build Pipeline | ✅ Complete |
