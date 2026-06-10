@@ -28,6 +28,10 @@ sync-version:
 clean:
 	rm -rf node_modules android/app/build *.apk .expo
 
+# Upgrade Expo SDK and all related dependencies
+upgrade:
+	@mise exec -- ./scripts/upgrade.sh
+
 # Tag and push to trigger release workflow (bumps patch version)
 release:
 	@mise exec -- ./scripts/release.sh
