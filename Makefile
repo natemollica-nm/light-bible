@@ -1,8 +1,12 @@
-.PHONY: deps dev clean build
+.PHONY: deps dev clean build test
 
 # Install and configure all development dependencies
 deps:
 	@./scripts/setup-dev.sh
+
+# Run tests
+test:
+	mise exec -- npx jest
 
 # Start Expo dev server
 dev:
@@ -23,3 +27,7 @@ sync-version:
 # Remove build artifacts
 clean:
 	rm -rf node_modules android/app/build *.apk .expo
+
+# Tag and push to trigger release workflow
+release:
+	@./scripts/release.sh
