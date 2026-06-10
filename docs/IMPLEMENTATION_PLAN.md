@@ -193,14 +193,15 @@ bun test --watch   # Watch mode during development
 
 ### Tasks
 - [x] Create `.github/workflows/build.yml` with test → build → release jobs
+- [x] Create `.github/workflows/ci.yml` for PR/push test + type-check
 - [x] Create `scripts/release.sh` — tags version and pushes to trigger release
-- [ ] Create `scripts/sync-version.js` — syncs version from app.json to package.json + build.gradle
-- [ ] Create `scripts/generate-icon.js` — generates app icon
-- [ ] Design minimal app icon (cross or book, monochrome)
-- [ ] Add `EXPO_TOKEN` secret to GitHub repo settings
+- [x] Create `scripts/sync-version.js` — syncs version from app.json to package.json + build.gradle
+- [x] Create `scripts/generate-icon.js` — generates monochrome cross app icon
+- [x] Add `EXPO_TOKEN` secret to GitHub repo settings
+- [x] Add `eas.json` production profile
+- [x] Document sideloading/Obtainium instructions in README
 - [ ] Test full pipeline: push tag → tests pass → APK built → release created
 - [ ] Verify Obtainium can discover and install from the release
-- [ ] Document sideloading/Obtainium instructions in README
 
 ### Release Workflow
 ```
@@ -248,4 +249,4 @@ Phase 7 (Build Pipeline) — can start after Phase 1, finalize after Phase 6
 | 4. Translation Selector | ✅ Complete |
 | 5. Offline Downloads | ✅ Complete |
 | 6. Settings & Polish | ✅ Complete |
-| 7. Build Pipeline | 🟡 In progress (workflow created, pending first run) |
+| 7. Build Pipeline | 🟡 In progress (pending first pipeline run + Obtainium verification) |
