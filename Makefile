@@ -30,8 +30,8 @@ clean:
 
 # Tag and push to trigger release workflow (bumps patch version)
 release:
-	@./scripts/release.sh
+	@mise exec -- ./scripts/release.sh
 
 # Retag current version and re-trigger release
 re-release:
-	@./scripts/release.sh recreate
+	@mise exec -- ./scripts/release.sh recreate

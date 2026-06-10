@@ -7,6 +7,9 @@ set -euo pipefail
 #   ./scripts/release.sh major    - bump major, tag, push
 #   ./scripts/release.sh recreate - retag current version, push
 
+# Ensure we're running from the project root
+cd "$(dirname "$0")/.."
+
 BUMP="${1:-patch}"
 APP_JSON="app.json"
 
@@ -24,7 +27,16 @@ set_version() {
   "
 }
 
+validate_semver() {
+  local version="$1"
+  if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Error: Version '$version' is not valid semver (expected X.Y.Z)"
+    exit 1
+  fi
+}
+
 VERSION=$(current_version)
+validate_semver "$VERSION"
 
 if [ "$BUMP" = "recreate" ]; then
   TAG="v${VERSION}"
@@ -54,7 +66,9 @@ echo "Bumping version: ${VERSION} → ${NEW_VERSION}"
 set_version "$NEW_VERSION"
 node scripts/sync-version.js
 
+# Stage all version-related files
 git add app.json package.json
+[ -f android/app/build.gradle ] && git add android/app/build.gradle
 git commit -m "chore: bump version to ${NEW_VERSION}"
 git tag -a "$TAG" -m "Release $TAG"
 git push origin HEAD "$TAG"
