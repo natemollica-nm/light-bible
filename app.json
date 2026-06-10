@@ -23,6 +23,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0674644d-06a5-44df-b00d-e1b6af597270"
+      }
+    },
+    "owner": "natemollica"
   }
 }
