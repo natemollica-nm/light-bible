@@ -6,12 +6,14 @@ import { StyledText } from "@/components/StyledText";
 import { HapticPressable } from "@/components/HapticPressable";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
+import { useHaptic } from "@/contexts/HapticContext";
 import { getTranslations } from "@/utils/bible";
 import { n } from "@/utils/scaling";
 
 export default function SettingsScreen() {
 	const { translationId } = useTranslation();
 	const { invertColors, setInvertColors } = useInvertColors();
+	const { hapticEnabled, setHapticEnabled } = useHaptic();
 	const [translationName, setTranslationName] = useState("");
 	const borderColor = invertColors ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.15)";
 
@@ -49,6 +51,15 @@ export default function SettingsScreen() {
 					<StyledText style={styles.toggleLabel}>Invert Colors</StyledText>
 					<StyledText style={styles.toggleValue}>
 						{invertColors ? "On" : "Off"}
+					</StyledText>
+				</HapticPressable>
+				<HapticPressable
+					onPress={() => setHapticEnabled(!hapticEnabled)}
+					style={[styles.toggle, { borderBottomColor: borderColor }]}
+				>
+					<StyledText style={styles.toggleLabel}>Haptic Feedback</StyledText>
+					<StyledText style={styles.toggleValue}>
+						{hapticEnabled ? "On" : "Off"}
 					</StyledText>
 				</HapticPressable>
 			</View>

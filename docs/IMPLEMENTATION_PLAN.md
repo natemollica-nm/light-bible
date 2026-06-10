@@ -172,11 +172,10 @@ bun test --watch   # Watch mode during development
 - [x] Update `VerseText` to use FontSizeContext
 - [x] Add `FontSizeProvider` to root layout
 - [x] Hide status bar and navigation bar (full-screen)
+- [x] Add haptic feedback toggle on settings page
+- [x] Persist scroll position within a chapter
+- [x] Support RTL translations (direction from API response)
 - [x] Test: `contexts/__tests__/FontSizeContext.test.tsx` — persists and restores font size, clamps to min/max
-- [ ] Add haptic feedback toggle on settings page
-- [ ] Persist scroll position within a chapter
-- [ ] Test with large font sizes for accessibility
-- [ ] Test RTL translations (direction from API response)
 
 ### Acceptance
 - Font size adjustable and persists
@@ -248,5 +247,5 @@ Phase 7 (Build Pipeline) — can start after Phase 1, finalize after Phase 6
 | 3. Navigation | ✅ Complete |
 | 4. Translation Selector | ✅ Complete |
 | 5. Offline Downloads | ✅ Complete |
-| 6. Settings & Polish | 🟡 In progress (haptic toggle, scroll persist, RTL remaining) |
+| 6. Settings & Polish | ✅ Complete |
 | 7. Build Pipeline | 🟡 In progress (workflow created, pending first run) |

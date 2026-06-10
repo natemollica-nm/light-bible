@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { VerseText } from "./VerseText";
 import { StyledText } from "./StyledText";
 import { getChapter } from "@/utils/bible";
@@ -46,20 +47,34 @@ function buildDisplayItems(content: ChapterContentItem[]): DisplayItem[] {
 	return items;
 }
 
+const scrollKey = (tid: string, book: string, ch: number) =>
+	`@scroll/${tid}/${book}/${ch}`;
+
 export function ChapterView({ translationId, bookId, chapter }: ChapterViewProps) {
 	const [items, setItems] = useState<DisplayItem[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [isRtl, setIsRtl] = useState(false);
+	const [initialOffset, setInitialOffset] = useState(0);
+	const listRef = useRef<FlatList>(null);
+	const offsetRef = useRef(0);
 
 	useEffect(() => {
 		let cancelled = false;
 		setLoading(true);
 		setError(null);
 
+		// Restore scroll position
+		AsyncStorage.getItem(scrollKey(translationId, bookId, chapter)).then((val) => {
+			if (!cancelled && val) setInitialOffset(Number(val));
+			else setInitialOffset(0);
+		});
+
 		getChapter(translationId, bookId, chapter)
 			.then((res) => {
 				if (!cancelled) {
 					setItems(buildDisplayItems(res.chapter.content));
+					setIsRtl(res.translation.textDirection === "rtl");
 					setLoading(false);
 				}
 			})
@@ -70,8 +85,19 @@ export function ChapterView({ translationId, bookId, chapter }: ChapterViewProps
 				}
 			});
 
-		return () => { cancelled = true; };
+		return () => {
+			cancelled = true;
+			// Save scroll position on unmount/chapter change
+			AsyncStorage.setItem(
+				scrollKey(translationId, bookId, chapter),
+				String(offsetRef.current)
+			);
+		};
 	}, [translationId, bookId, chapter]);
+
+	const handleScroll = useCallback((e: any) => {
+		offsetRef.current = e.nativeEvent.contentOffset.y;
+	}, []);
 
 	if (loading) {
 		return (
@@ -93,16 +119,21 @@ export function ChapterView({ translationId, bookId, chapter }: ChapterViewProps
 
 	return (
 		<FlatList
+			ref={listRef}
 			data={items}
 			keyExtractor={(item) => item.key}
 			renderItem={({ item }) =>
 				item.type === "verse" ? (
-					<VerseText number={item.number!} text={item.text} />
+					<VerseText number={item.number!} text={item.text} rtl={isRtl} />
 				) : (
-					<StyledText style={styles.heading}>{item.text}</StyledText>
+					<StyledText style={[styles.heading, isRtl && styles.rtlText]}>{item.text}</StyledText>
 				)
 			}
 			contentContainerStyle={styles.list}
+			style={isRtl ? styles.rtl : undefined}
+			onScroll={handleScroll}
+			scrollEventThrottle={100}
+			contentOffset={{ x: 0, y: initialOffset }}
 		/>
 	);
 }
@@ -125,5 +156,12 @@ const styles = StyleSheet.create({
 	message: {
 		fontSize: n(18),
 		opacity: 0.6,
+	},
+	rtl: {
+		direction: "rtl",
+	},
+	rtlText: {
+		textAlign: "right",
+		writingDirection: "rtl",
 	},
 });
