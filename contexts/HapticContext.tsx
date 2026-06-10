@@ -1,18 +1,45 @@
-import { createContext, useContext, useMemo, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from "react";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const HapticContext = createContext<{ triggerHaptic: () => void }>({
+interface HapticContextType {
+	triggerHaptic: () => void;
+	hapticEnabled: boolean;
+	setHapticEnabled: (enabled: boolean) => void;
+}
+
+const HapticContext = createContext<HapticContextType>({
 	triggerHaptic: () => {},
+	hapticEnabled: true,
+	setHapticEnabled: () => {},
 });
 
 export const useHaptic = () => useContext(HapticContext);
 
 export const HapticProvider = ({ children }: { children: ReactNode }) => {
-	const triggerHaptic = useCallback(() => {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+	const [hapticEnabled, setHapticEnabledState] = useState(true);
+
+	useEffect(() => {
+		AsyncStorage.getItem("@haptic-enabled").then((value) => {
+			if (value !== null) setHapticEnabledState(value === "true");
+		});
 	}, []);
 
-	const value = useMemo(() => ({ triggerHaptic }), [triggerHaptic]);
+	const setHapticEnabled = useCallback(async (enabled: boolean) => {
+		setHapticEnabledState(enabled);
+		await AsyncStorage.setItem("@haptic-enabled", String(enabled));
+	}, []);
+
+	const triggerHaptic = useCallback(() => {
+		if (hapticEnabled) {
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+		}
+	}, [hapticEnabled]);
+
+	const value = useMemo(
+		() => ({ triggerHaptic, hapticEnabled, setHapticEnabled }),
+		[triggerHaptic, hapticEnabled, setHapticEnabled]
+	);
 
 	return (
 		<HapticContext.Provider value={value}>
