@@ -7,7 +7,6 @@ import { DownloadProgress } from "@/components/DownloadProgress";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import {
-	isTranslationDownloaded,
 	downloadFullTranslation,
 	clearTranslationCache,
 	getDownloadedTranslations,
@@ -37,11 +36,11 @@ export default function DownloadsScreen() {
 	}, []);
 
 	useEffect(() => {
-		refresh();
+		getDownloadedTranslations().then(setDownloaded).catch(() => {});
 		getTranslations()
 			.then((res) => setTranslations(res.translations))
 			.catch(() => {});
-	}, [refresh]);
+	}, []);
 
 	const handleDownload = async (id: string) => {
 		cancelRef.current = { cancelled: false };
