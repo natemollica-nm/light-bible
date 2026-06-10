@@ -1,6 +1,6 @@
 language: "en"
 reviews:
-  profile: "concise"
+  profile: "chill"
   high_level_summary: true
   poem: false
   review_status: true
