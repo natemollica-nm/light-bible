@@ -28,6 +28,10 @@ sync-version:
 clean:
 	rm -rf node_modules android/app/build *.apk .expo
 
-# Tag and push to trigger release workflow
+# Tag and push to trigger release workflow (bumps patch version)
 release:
-	@./scripts/release.sh
+	@mise exec -- ./scripts/release.sh
+
+# Retag current version and re-trigger release
+re-release:
+	@mise exec -- ./scripts/release.sh recreate
