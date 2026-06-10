@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Bible",
+    "slug": "light-bible",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "light-bible",
+    "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "android": {
+      "backgroundColor": "#000000",
+      "package": "com.lightbible.reader",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
