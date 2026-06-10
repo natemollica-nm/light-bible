@@ -1,19 +1,61 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Reads version from app.json, creates/recreates a git tag, and pushes it to trigger a release.
+# Usage:
+#   ./scripts/release.sh          - bump patch, tag, push
+#   ./scripts/release.sh minor    - bump minor, tag, push
+#   ./scripts/release.sh major    - bump major, tag, push
+#   ./scripts/release.sh recreate - retag current version, push
 
-VERSION=$(node -p "require('./app.json').expo.version")
-TAG="v${VERSION}"
+BUMP="${1:-patch}"
+APP_JSON="app.json"
 
-# Delete existing tag if present (local + remote)
-if git rev-parse "$TAG" &>/dev/null; then
-  echo "Tag $TAG exists, replacing..."
-  git tag -d "$TAG"
+current_version() {
+  node -p "require('./$APP_JSON').expo.version"
+}
+
+set_version() {
+  local new_version="$1"
+  node -e "
+    const fs = require('fs');
+    const app = JSON.parse(fs.readFileSync('$APP_JSON', 'utf-8'));
+    app.expo.version = '$new_version';
+    fs.writeFileSync('$APP_JSON', JSON.stringify(app, null, 2) + '\n');
+  "
+}
+
+VERSION=$(current_version)
+
+if [ "$BUMP" = "recreate" ]; then
+  TAG="v${VERSION}"
+  echo "Recreating tag $TAG for current version..."
+  git tag -d "$TAG" 2>/dev/null || true
   git push origin ":refs/tags/$TAG" 2>/dev/null || true
+  git tag -a "$TAG" -m "Release $TAG"
+  git push origin "$TAG"
+  echo "Tag $TAG pushed — release workflow will start."
+  exit 0
 fi
 
-echo "Creating tag: $TAG"
+# Parse semver
+IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+case "$BUMP" in
+  major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+  minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+  patch) PATCH=$((PATCH + 1)) ;;
+  *) echo "Usage: $0 [patch|minor|major|recreate]"; exit 1 ;;
+esac
+
+NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+TAG="v${NEW_VERSION}"
+
+echo "Bumping version: ${VERSION} → ${NEW_VERSION}"
+set_version "$NEW_VERSION"
+node scripts/sync-version.js
+
+git add app.json package.json
+git commit -m "chore: bump version to ${NEW_VERSION}"
 git tag -a "$TAG" -m "Release $TAG"
-git push origin "$TAG"
+git push origin HEAD "$TAG"
 echo "Tag $TAG pushed — release workflow will start."
