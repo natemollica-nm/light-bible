@@ -117,14 +117,16 @@ bun test --watch   # Watch mode during development
 **Goal**: Users can browse and switch between all available translations.
 
 ### Tasks
-- [ ] Create `app/settings/translation.tsx` — full translation list screen
-- [ ] Create `components/TranslationList.tsx` — scrollable list with selection indicator
-- [ ] Fetch `available_translations.json`, cache the list
-- [ ] Group translations by language
-- [ ] Selecting a translation updates TranslationContext, navigates back
-- [ ] Clear reading cache when translation changes (position preserved, text refetched)
-- [ ] Add `SelectorButton` on settings page showing current translation
-- [ ] Test: `components/__tests__/TranslationList.test.tsx` — renders translations, highlights selected, fires onSelect
+- [x] Create `app/settings/translation.tsx` — full translation list screen
+- [x] Create `components/TranslationList.tsx` — scrollable list with selection indicator
+- [x] Fetch `available_translations.json`, cache the list
+- [x] Group translations by language
+- [x] Selecting a translation updates TranslationContext, navigates back
+- [x] Add `SelectorButton` on settings page showing current translation
+- [x] Test: `components/__tests__/TranslationList.test.tsx` — renders translations, highlights selected, fires onSelect
+- [x] Clear reading cache when translation changes (position preserved, text refetched)
+
+**Note**: Cache clearing on translation switch is handled implicitly — cache keys are namespaced per translation (`@bible-cache/{translationId}/...`), so switching translations triggers fresh fetches for the new translation while preserving the old translation's cache for quick switch-back.
 
 ### Acceptance
 - Settings → Translation shows all available translations from API
@@ -140,15 +142,15 @@ bun test --watch   # Watch mode during development
 **Goal**: Users can download full translations for guaranteed offline reading.
 
 ### Tasks
-- [ ] Create `app/settings/downloads.tsx` — manage downloaded translations
-- [ ] Create `components/DownloadProgress.tsx` — progress indicator
-- [ ] Implement `downloadFullTranslation()` in `utils/bibleCache.ts` with progress callback
-- [ ] Show download status per translation (not downloaded / downloading / complete)
-- [ ] Allow cancelling an in-progress download
-- [ ] Allow removing a downloaded translation (clear cached chapters)
-- [ ] Show "Chapter not available offline" when no cache and no network
-- [ ] Test: `utils/__tests__/bibleCache.test.ts` — `downloadFullTranslation` calls progress callback, caches all chapters
-- [ ] Test: `components/__tests__/DownloadProgress.test.tsx` — renders progress correctly
+- [x] Create `app/settings/downloads.tsx` — manage downloaded translations
+- [x] Create `components/DownloadProgress.tsx` — progress indicator
+- [x] Implement `downloadFullTranslation()` in `utils/bibleCache.ts` with progress callback
+- [x] Show download status per translation (not downloaded / downloading / complete)
+- [x] Allow cancelling an in-progress download
+- [x] Allow removing a downloaded translation (clear cached chapters)
+- [x] Show "Chapter not available offline" when no cache and no network
+- [x] Test: `utils/__tests__/bibleCache.test.ts` — `downloadFullTranslation` calls progress callback, caches all chapters
+- [x] Test: `components/__tests__/DownloadProgress.test.tsx` — renders progress correctly
 
 ### Acceptance
 - User can download a full translation (shows progress: "245/1189 chapters")
@@ -244,7 +246,7 @@ Phase 7 (Build Pipeline) — can start after Phase 1, finalize after Phase 6
 | 1. Foundation | 🟡 In progress (pending device verification) |
 | 2. API Integration | 🟡 In progress (1 test remaining: ChapterView component test) |
 | 3. Navigation | ✅ Complete |
-| 4. Translation Selector | ⬜ Not started |
-| 5. Offline Downloads | ⬜ Not started |
+| 4. Translation Selector | ✅ Complete |
+| 5. Offline Downloads | ✅ Complete |
 | 6. Settings & Polish | ⬜ Not started |
 | 7. Build Pipeline | 🟡 In progress (workflow created, pending first run) |

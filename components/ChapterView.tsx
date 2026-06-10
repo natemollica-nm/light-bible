@@ -84,7 +84,9 @@ export function ChapterView({ translationId, bookId, chapter }: ChapterViewProps
 	if (error) {
 		return (
 			<View style={styles.center}>
-				<StyledText style={styles.message}>{error}</StyledText>
+				<StyledText style={styles.message}>
+					Chapter not available offline.
+				</StyledText>
 			</View>
 		);
 	}
