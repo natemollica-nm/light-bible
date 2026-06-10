@@ -7,6 +7,8 @@ import { HapticProvider } from "@/contexts/HapticContext";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import { ReadingPositionProvider } from "@/contexts/ReadingPositionContext";
 import { FontSizeProvider } from "@/contexts/FontSizeContext";
+import { setEsvApiKey } from "@/utils/esvApi";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SystemUI from "expo-system-ui";
 import * as NavigationBar from "expo-navigation-bar";
 import * as SplashScreen from "expo-splash-screen";
@@ -42,11 +44,15 @@ export default function RootLayout() {
 
 	useEffect(() => {
 		setStatusBarHidden(true, "none");
+		// Load ESV API key on startup
+		AsyncStorage.getItem("@esv-api-key").then((key) => {
+			if (key) setEsvApiKey(key);
+		});
 	}, []);
 
 	useEffect(() => {
 		if (fontsLoaded || fontError) {
-			SplashScreen.hideAsync();
+			SplashScreen.hideAsync().catch(() => {});
 		}
 	}, [fontsLoaded, fontError]);
 

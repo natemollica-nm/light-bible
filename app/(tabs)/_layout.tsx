@@ -2,9 +2,9 @@ import { Tabs } from "expo-router";
 import { Navbar, TabConfigItem } from "@/components/Navbar";
 
 export const TABS_CONFIG: ReadonlyArray<TabConfigItem> = [
-	{ name: "Read", screenName: "index", iconName: "menu-book" },
-	{ name: "Books", screenName: "books", iconName: "library-books" },
-	{ name: "Settings", screenName: "settings", iconName: "settings" },
+	{ name: "Read", screenName: "index", iconName: "auto-stories" },
+	{ name: "Books", screenName: "books", iconName: "format-list-bulleted" },
+	{ name: "Settings", screenName: "settings", iconName: "tune" },
 ] as const;
 
 export default function TabLayout() {
