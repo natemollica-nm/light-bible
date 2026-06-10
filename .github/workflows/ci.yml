@@ -17,5 +17,6 @@ jobs:
           bun-version: latest
 
       - run: bun install --frozen-lockfile
+      - run: npx eslint .
       - run: npx tsc --noEmit
       - run: npx jest

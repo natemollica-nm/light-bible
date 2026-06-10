@@ -15,7 +15,7 @@ interface ChapterViewProps {
 
 interface DisplayItem {
 	key: string;
-	type: "verse" | "heading";
+	type: "verse" | "heading" | "copyright";
 	number?: number;
 	text: string;
 }
@@ -40,6 +40,12 @@ function buildDisplayItems(content: ChapterContentItem[]): DisplayItem[] {
 			items.push({
 				key: `h-${items.length}`,
 				type: "heading",
+				text: item.content.join(""),
+			});
+		} else if (item.type === "copyright") {
+			items.push({
+				key: `c-${items.length}`,
+				type: "copyright",
 				text: item.content.join(""),
 			});
 		}
@@ -125,6 +131,8 @@ export function ChapterView({ translationId, bookId, chapter }: ChapterViewProps
 			renderItem={({ item }) =>
 				item.type === "verse" ? (
 					<VerseText number={item.number!} text={item.text} rtl={isRtl} />
+				) : item.type === "copyright" ? (
+					<StyledText style={[styles.copyright, isRtl && styles.rtlText]}>{item.text}</StyledText>
 				) : (
 					<StyledText style={[styles.heading, isRtl && styles.rtlText]}>{item.text}</StyledText>
 				)
@@ -163,5 +171,11 @@ const styles = StyleSheet.create({
 	rtlText: {
 		textAlign: "right",
 		writingDirection: "rtl",
+	},
+	copyright: {
+		fontSize: n(10),
+		opacity: 0.35,
+		paddingTop: n(32),
+		lineHeight: n(10 * 1.4),
 	},
 });
