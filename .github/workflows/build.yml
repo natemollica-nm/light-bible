@@ -43,7 +43,7 @@ jobs:
 
       - uses: android-actions/setup-android@v4
 
-      - uses: expo/expo-github-action@v8
+      - uses: expo/expo-github-action@v9
         with:
           expo-version: latest
           eas-version: latest
