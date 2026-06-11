@@ -11,7 +11,6 @@ module.exports = defineConfig([
       '@typescript-eslint/array-type': 'off',
       'react-hooks/refs': 'off',
       'react-hooks/exhaustive-deps': 'warn',
-      'react-hooks/set-state-in-effect': 'warn',
     },
   },
   {
