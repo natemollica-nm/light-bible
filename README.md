@@ -12,19 +12,12 @@ A distraction-free Bible reader for the Light Phone III. Monochrome, offline-cap
 
 ## Install on Light Phone III
 
-### Via Obtainium (recommended — auto-updates)
+### Via Obtainium (auto-updates)
 
 1. Install [Obtainium](https://github.com/ImranR98/Obtainium) on your Light Phone III
 2. Add a new app with source URL: `https://github.com/<owner>/light-bible`
 3. Set APK filter to `light-bible-*.apk`
 4. Obtainium will notify you of new releases
-
-### Manual sideload
-
-1. Download the latest `light-bible-*.apk` from [Releases](https://github.com/<owner>/light-bible/releases)
-2. Transfer to your Light Phone via USB or download directly in the browser
-3. Open the APK in your file manager → Install
-4. If prompted, enable "Install from unknown sources" in Settings
 
 ## Development
 
