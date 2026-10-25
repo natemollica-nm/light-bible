@@ -1,0 +1,9 @@
+[tool]
+id = "com.lightbible.reader"
+label = "Bible"
+versionCode = 20000
+versionName = "2.0.0"
+permissions = ["android.permission.INTERNET"]
+capabilities = []
+serverPackage = "com.lightos"
+orientation = "portrait"

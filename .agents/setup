@@ -27,17 +27,12 @@ fi
 EOF
 fi
 
-echo '==> Installing locked JavaScript dependencies'
+echo '==> Installing locked dependencies for the retained Expo reference'
 time bun install --frozen-lockfile
 
-echo '==> Installing EAS CLI for make build'
-if ! command -v eas >/dev/null 2>&1; then
-  time bun install --global eas-cli
-fi
-
 echo '==> Installing Android SDK packages'
-# Match node_modules/react-native/gradle/libs.versions.toml (Expo SDK 54).
-packages=('platform-tools' 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1')
+# The native Light SDK tool needs no Expo, EAS, NDK, or emulator runtime.
+packages=('platform-tools' 'platforms;android-36' 'build-tools;36.0.0')
 missing=()
 for package in "${packages[@]}"; do
   if [[ ! -f "$ANDROID_HOME/${package//;/\/}/package.xml" ]]; then
@@ -54,7 +49,7 @@ for package in "${packages[@]}"; do
   test -f "$ANDROID_HOME/${package//;/\/}/package.xml"
 done
 
-echo '==> Caching the pinned Gradle distribution (no daemon)'
-time bash android/gradlew --version
+echo '==> Caching the official Light SDK, Gradle dependencies, and debug build'
+time ./scripts/light-gradle.sh :tool:assembleDebug
 
 echo '==> Orb setup ready'

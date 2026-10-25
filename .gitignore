@@ -8,6 +8,10 @@ dist/
 # Amp portal metadata
 .amp/portals/*
 
+# Pinned upstream Light SDK, fetched by scripts/light-gradle.sh
+.light-sdk/
+.kotlin/
+
 # Gradle files
 .gradle/
 build/

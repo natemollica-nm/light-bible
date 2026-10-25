@@ -1,41 +1,27 @@
-.PHONY: deps dev clean build test
+.PHONY: deps build test run clean legacy-test legacy-dev
 
-# Install and configure all development dependencies
+# Install and cache the native Light SDK development environment.
 deps:
-	@./scripts/setup-dev.sh
+	@./.agents/setup
 
-# Run tests
+# SDK source/dependency policy, Android lint, and native unit tests.
 test:
-	mise exec -- npx jest
+	mise exec -- ./scripts/light-gradle.sh :tool:testDebugUnitTest :tool:lintDebug
 
-# Start Expo dev server
-dev:
-	mise exec -- bun start
-
-# Build production APK locally
+# Unsigned release: only Light's build/sign/review process grants approval.
 build:
-	mise exec -- bunx eas build --platform android --profile production --local --output ./light-bible.apk
+	mise exec -- ./scripts/light-gradle.sh :tool:assembleRelease -DlightSdk.unsigned=true
 
-# Build and run on connected Android device
+# Requires an attached Android device with sideloading enabled.
 run:
-	mise exec -- bunx expo run:android
+	mise exec -- ./scripts/light-gradle.sh :tool:installDebug
 
-# Sync version from app.json to package.json + build.gradle
-sync-version:
-	mise exec -- bun run sync-version
-
-# Remove build artifacts
 clean:
-	rm -rf node_modules android/app/build *.apk .expo
+	mise exec -- ./scripts/light-gradle.sh :tool:clean
 
-# Upgrade Expo SDK and all related dependencies
-upgrade:
-	@mise exec -- ./scripts/upgrade.sh
+# The previous Expo app remains for reference, not Tool Library submission.
+legacy-test:
+	mise exec -- bun run test --runInBand
 
-# Tag and push to trigger release workflow (bumps patch version)
-release:
-	@mise exec -- ./scripts/release.sh
-
-# Retag current version and re-trigger release
-re-release:
-	@mise exec -- ./scripts/release.sh recreate
+legacy-dev:
+	mise exec -- bun start
