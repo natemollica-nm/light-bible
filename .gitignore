@@ -5,6 +5,9 @@ node_modules/
 .expo/
 dist/
 
+# Amp portal metadata
+.amp/portals/*
+
 # Gradle files
 .gradle/
 build/

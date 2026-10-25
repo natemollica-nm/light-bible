@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+repo_root="$PWD"
+export PATH="$HOME/.local/bin:$PATH"
+
+echo '==> Installing mise and repository toolchains'
+if ! command -v mise >/dev/null 2>&1; then
+  curl --fail --silent --show-error --location https://mise.run | sh
+fi
+mise trust .mise.toml
+time mise install --yes
+eval "$(mise env --shell bash)"
+
+# Amp and supervised services use separate non-interactive login shells.
+marker='# light-bible orb toolchains'
+if ! grep -Fqx "$marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >> "$HOME/.bash_profile" <<EOF
+
+$marker
+if [[ -z "\${LIGHT_BIBLE_ORB_ENV:-}" && ( "\$PWD" == "$repo_root" || "\$PWD" == "$repo_root/"* ) ]]; then
+  export LIGHT_BIBLE_ORB_ENV=1
+  export PATH="\$HOME/.local/bin:\$PATH"
+  eval "\$(mise env --shell bash)"
+fi
+EOF
+fi
+
+echo '==> Installing locked JavaScript dependencies'
+time bun install --frozen-lockfile
+
+echo '==> Installing EAS CLI for make build'
+if ! command -v eas >/dev/null 2>&1; then
+  time bun install --global eas-cli
+fi
+
+echo '==> Installing Android SDK packages'
+# Match node_modules/react-native/gradle/libs.versions.toml (Expo SDK 54).
+packages=('platform-tools' 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1')
+missing=()
+for package in "${packages[@]}"; do
+  if [[ ! -f "$ANDROID_HOME/${package//;/\/}/package.xml" ]]; then
+    missing+=("$package")
+  fi
+done
+if ((${#missing[@]})); then
+  # Ignore yes's SIGPIPE when sdkmanager closes stdin, not sdkmanager failures.
+  time (yes || true) | sdkmanager --licenses >/dev/null
+  time sdkmanager "${missing[@]}"
+fi
+for package in "${packages[@]}"; do
+  # sdkmanager can exit successfully even when it skips a package.
+  test -f "$ANDROID_HOME/${package//;/\/}/package.xml"
+done
+
+echo '==> Caching the pinned Gradle distribution (no daemon)'
+time bash android/gradlew --version
+
+echo '==> Orb setup ready'

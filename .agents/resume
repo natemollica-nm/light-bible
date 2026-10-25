@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Toolchains and dependencies persist in the snapshot. No authentication or
+# backing services are required; do not repeat installation when the orb wakes.
+echo 'light-bible: using cached toolchains and dependencies'

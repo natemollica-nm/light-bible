@@ -36,6 +36,21 @@ make run     # Build + run on connected Android device
 make build   # Production APK
 ```
 
+### Amp orbs
+
+`.agents/setup` installs the tools from `.mise.toml`, dependencies from `bun.lock`,
+EAS CLI, the Android SDK/NDK/CMake packages required by Expo SDK 54, and the Gradle
+wrapper distribution. It reuses installed tools and packages on subsequent runs.
+Amp snapshots this environment once the setup files reach the default branch;
+exact snapshot matches skip setup entirely.
+
+Repository-scoped login-shell activation makes the mise environment available to
+agents and supervised services. `.agents/resume` does not reinstall dependencies.
+No database or credentials are needed for tests or Android bundle export. EAS
+builds still require your own Expo authentication and signing configuration;
+the first native build downloads Gradle/Maven dependencies. Android emulation
+and native iOS builds are not available in the Linux orb.
+
 ### Release
 
 ```bash
