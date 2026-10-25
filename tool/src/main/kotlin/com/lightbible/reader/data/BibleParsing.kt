@@ -23,17 +23,28 @@ internal data class BookManifest(val translation: Translation, val books: List<B
 
 /** Keep textual fragments and poetry, but never render footnote/reference objects. */
 private fun contentText(content: JsonElement?): String = buildString {
+    var omittedNote = false
+    fun appendText(text: String) {
+        if (text.isEmpty()) return
+        // HelloAO trims text on either side of footnotes. Restore the word
+        // boundary without splitting ordinary fragments or detaching punctuation.
+        if (omittedNote && isNotEmpty() && !last().isWhitespace() && !text.first().isWhitespace() &&
+            last() !in "([{‘“'\"-/—" && text.first() !in ".,;:!?)]}’”'\"-/—%،؛؟"
+        ) append(' ')
+        append(text)
+        omittedNote = false
+    }
     fun appendContent(element: JsonElement) {
         when (element) {
-            is JsonPrimitive -> if (element.isString) append(element.content)
+            is JsonPrimitive -> if (element.isString) appendText(element.content)
             is JsonArray -> element.forEach { appendContent(it) }
             is JsonObject -> when {
-                "noteId" in element -> Unit
+                "noteId" in element -> omittedNote = true
                 element["lineBreak"]?.jsonPrimitive?.booleanOrNull == true -> append('\n')
                 element["text"] is JsonPrimitive -> {
                     val poetry = "poem" in element
                     if (poetry && isNotEmpty() && last() != '\n') append('\n')
-                    append(element.getValue("text").jsonPrimitive.content)
+                    appendText(element.getValue("text").jsonPrimitive.content)
                     if (poetry) append('\n')
                 }
             }

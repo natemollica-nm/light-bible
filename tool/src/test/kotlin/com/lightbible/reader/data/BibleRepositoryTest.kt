@@ -31,6 +31,9 @@ class BibleRepositoryTest {
                         Verse(null, "A heading"),
                         Verse(1, "In the beginning.\nA second line."),
                         Verse(2, "First poem line\nSecond poem line"),
+                        Verse(3, "Jethro, the priest came to Horeb, the mountain of God. There the angel of the LORD appeared."),
+                        Verse(4, "The LORD’s word, spoken (clearly)."),
+                        Verse(5, "Already spaced; unbroken."),
                         Verse(null, "\n"),
                     ), passage.verses,
                 )
@@ -202,6 +205,9 @@ class BibleRepositoryTest {
                     {"type":"heading","content":["A heading"]},
                     {"type":"verse","number":1,"content":["In ",{"text":"the beginning."},{"noteId":1,"text":"DO NOT SHOW"},{"lineBreak":true},"A second line."]},
                     {"type":"verse","number":2,"content":[{"text":"First poem line","poem":1},{"text":"Second poem line","poem":2}]},
+                    {"type":"verse","number":3,"content":["Jethro,",{"noteId":10},"the priest came to Horeb,",{"noteId":11},"the mountain of God. There the angel",{"noteId":12},{"text":"of the LORD appeared."}]},
+                    {"type":"verse","number":4,"content":["The LORD",{"noteId":13},"’s word",{"noteId":14},", spoken (",{"noteId":15},"clearly)."]},
+                    {"type":"verse","number":5,"content":["Already ",{"noteId":16},"spaced; un",{"text":"broken."}]},
                     {"type":"line_break"},
                     {"type":"copyright","content":["Public domain"]}
                 ],"footnotes":[{"text":"DO NOT SHOW"}]},"unknownFutureField":true

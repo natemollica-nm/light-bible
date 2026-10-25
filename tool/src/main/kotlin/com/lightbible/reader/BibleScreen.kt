@@ -140,7 +140,7 @@ private abstract class BibleChild<R>(activity: SealedLightActivity, protected va
 
 private class BooksScreen(activity: SealedLightActivity, model: BibleViewModel, private val books: List<Book>, private val translation: String) : BibleChild<ReadingLocation>(activity, model) {
     @Composable
-    override fun Content() = Page("Books") {
+    override fun Content() = Page("Books", onBack = { goBack() }) {
         LazyColumn(Modifier.weight(1f)) {
             items(books, key = { it.id }) { book ->
                 Action(book.name) {
@@ -153,7 +153,7 @@ private class BooksScreen(activity: SealedLightActivity, model: BibleViewModel, 
 
 private class ChaptersScreen(activity: SealedLightActivity, model: BibleViewModel, private val book: Book) : BibleChild<Int>(activity, model) {
     @Composable
-    override fun Content() = Page(book.name) {
+    override fun Content() = Page(book.name, onBack = { goBack() }) {
         LazyColumn(Modifier.weight(1f)) {
             items((book.firstChapterNumber..book.lastChapterNumber).toList()) { chapter ->
                 Action("Chapter $chapter") { goBack(chapter) }
@@ -170,7 +170,7 @@ private class TranslationsScreen(activity: SealedLightActivity, model: BibleView
     @Composable
     override fun Content() {
         val state by model.state.collectAsState()
-        Page("Translation") {
+        Page("Translation", onBack = { goBack() }) {
             LightTextField("Filter", query, "Name or language", onClick = {
                 navigateTo({ TextScreen(it, model, "Find translation", query) }) { query = it }
             }, modifier = Modifier.padding(horizontal = 16.dp))
@@ -199,14 +199,12 @@ private class SettingsScreen(activity: SealedLightActivity, model: BibleViewMode
     @Composable
     override fun Content() {
         val state by model.state.collectAsState()
-        Page("Settings") {
+        Page("Settings", onBack = { goBack() }) {
             LightScrollView(Modifier.weight(1f)) {
                 Action("Translation: ${state.location.translationId}") { navigateTo({ TranslationsScreen(it, model) }) }
                 Message("Reading text size")
-                Row {
-                    listOf("Small", "Medium", "Large").forEachIndexed { index, label ->
-                        Action(if (index == state.fontSize) "$label ✓" else label, modifier = Modifier.weight(1f)) { model.setFontSize(index) }
-                    }
+                listOf("Small", "Medium", "Large").forEachIndexed { index, label ->
+                    Action(if (index == state.fontSize) "$label ✓" else label) { model.setFontSize(index) }
                 }
                 Action(if (state.lightBackground) "Background: white" else "Background: black") { model.toggleBackground() }
                 Action("Offline downloads") { navigateTo({ DownloadsScreen(it, model) }) }
@@ -227,7 +225,7 @@ private class DownloadsScreen(activity: SealedLightActivity, model: BibleViewMod
     override fun Content() {
         val state by model.state.collectAsState()
         var removing by remember { mutableStateOf<String?>(null) }
-        Page("Offline reading") {
+        Page("Offline reading", onBack = { goBack() }) {
             LightScrollView(Modifier.weight(1f)) {
                 Message("Download the selected translation over Wi-Fi. Leaving the app, loading the translation list, or opening another chapter pauses the download. Retry resumes saved chapters.")
                 if (state.downloading != null) {
@@ -274,7 +272,7 @@ private class TextScreen(activity: SealedLightActivity, model: BibleViewModel, p
 
 private class AboutScreen(activity: SealedLightActivity, model: BibleViewModel) : BibleChild<Unit>(activity, model) {
     @Composable
-    override fun Content() = Page("About Bible") {
+    override fun Content() = Page("About Bible", onBack = { goBack() }) {
         LightScrollView(Modifier.weight(1f)) {
             Message("Bible 2.0.0 · Open source · No ads or analytics")
             Message("Translations, book lists, and uncached chapters are requested over HTTPS from bible.helloao.org. The provider receives your IP address and requested translation and chapter. Downloaded chapters are read locally.")
@@ -293,9 +291,12 @@ private fun BibleTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Page(title: String, content: @Composable ColumnScope.() -> Unit) = BibleTheme {
+private fun Page(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) = BibleTheme {
     Column(Modifier.fillMaxSize().background(LightThemeTokens.colors.background)) {
-        LightTopBar(center = LightTopBarCenter.Text(title))
+        LightTopBar(
+            leftButton = LightBarButton.LightIcon(LightIcons.BACK, contentDescription = "Back", onClick = onBack),
+            center = LightTopBarCenter.Text(title),
+        )
         content()
     }
 }
