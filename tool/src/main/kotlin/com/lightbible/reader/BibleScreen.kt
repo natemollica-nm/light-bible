@@ -33,6 +33,8 @@ import com.lightbible.reader.data.BibleRepository
 import com.lightbible.reader.data.Book
 import com.lightbible.reader.data.ReadingLocation
 import com.lightbible.reader.data.Translation
+import com.lightbible.reader.data.isOnlineOnlyTranslation
+import com.lightbible.reader.data.translationAbbreviation
 import com.thelightphone.sdk.InitialScreen
 import com.thelightphone.sdk.LightScreen
 import com.thelightphone.sdk.SealedLightActivity
@@ -63,7 +65,7 @@ class BibleScreen(activity: SealedLightActivity) : LightScreen<Unit, BibleViewMo
         BibleTheme {
             Column(Modifier.fillMaxSize().background(LightThemeTokens.colors.background)) {
                 LightTopBar(
-                    center = LightTopBarCenter.Text("BIBLE · ${state.location.translationId}"),
+                    center = LightTopBarCenter.Text("BIBLE · ${translationAbbreviation(state.location.translationId)}"),
                     rightButton = LightBarButton.LightIcon(LightIcons.SETTINGS, contentDescription = "Settings", onClick = {
                         if (state.ready) navigateTo({ SettingsScreen(it, viewModel) })
                     }),
@@ -171,7 +173,7 @@ private class TranslationsScreen(activity: SealedLightActivity, model: BibleView
     override fun Content() {
         val state by model.state.collectAsState()
         Page("Translation", onBack = { goBack() }) {
-            LightTextField("Filter", query, "Name or language", onClick = {
+            LightTextField("English translations", query, "Name or abbreviation", onClick = {
                 navigateTo({ TextScreen(it, model, "Find translation", query) }) { query = it }
             }, modifier = Modifier.padding(horizontal = 16.dp))
             if (state.loadingTranslations) Message("Loading translations…")
@@ -179,13 +181,18 @@ private class TranslationsScreen(activity: SealedLightActivity, model: BibleView
                 Message(it)
                 Action("Retry") { model.loadTranslations() }
             }
-            val available = (state.translations + state.downloaded.map { Translation(id = it, name = it) } +
+            val available = (state.translations +
                 Translation(id = "ESV", name = "English Standard Version (API key required)")).distinctBy { it.id }
             val filtered = available.filter { "${it.id} ${it.name} ${it.englishName} ${it.languageName}".contains(query, ignoreCase = true) }
             LazyColumn(Modifier.weight(1f)) {
                 if (filtered.isEmpty() && !state.loadingTranslations) item { Message("No matching translations.") }
                 items(filtered, key = { it.id }) { translation ->
-                    Action("${translation.name} (${translation.id})${if (translation.id in state.downloaded) " · offline" else ""}") {
+                    val availability = when {
+                        isOnlineOnlyTranslation(translation.id) -> " · online"
+                        translation.id in state.downloaded -> " · offline"
+                        else -> ""
+                    }
+                    Action("${translation.name} (${translationAbbreviation(translation.id)})$availability") {
                         model.open(state.location.copy(translationId = translation.id))
                         goBack()
                     }
@@ -201,7 +208,7 @@ private class SettingsScreen(activity: SealedLightActivity, model: BibleViewMode
         val state by model.state.collectAsState()
         Page("Settings", onBack = { goBack() }) {
             LightScrollView(Modifier.weight(1f)) {
-                Action("Translation: ${state.location.translationId}") { navigateTo({ TranslationsScreen(it, model) }) }
+                Action("Translation: ${translationAbbreviation(state.location.translationId)}") { navigateTo({ TranslationsScreen(it, model) }) }
                 Message("Reading text size")
                 listOf("Small", "Medium", "Large").forEachIndexed { index, label ->
                     Action(if (index == state.fontSize) "$label ✓" else label) { model.setFontSize(index) }
@@ -229,24 +236,25 @@ private class DownloadsScreen(activity: SealedLightActivity, model: BibleViewMod
             LightScrollView(Modifier.weight(1f)) {
                 Message("Download the selected translation over Wi-Fi. Leaving the app, loading the translation list, or opening another chapter pauses the download. Retry resumes saved chapters.")
                 if (state.downloading != null) {
-                    Message("${state.downloading}: ${state.progress.first} / ${state.progress.second} chapters")
+                    Message("${translationAbbreviation(state.downloading!!)}: ${state.progress.first} / ${state.progress.second} chapters")
                     Action("Pause download") { model.cancelDownload() }
-                } else if (state.location.translationId == "ESV") {
-                    Message("ESV is online-only. Select another translation to download.")
+                } else if (isOnlineOnlyTranslation(state.location.translationId)) {
+                    Message("${translationAbbreviation(state.location.translationId)} is online-only. Select KJV or ASV to download.")
                 } else {
-                    Action("Download ${state.location.translationId}") { model.download() }
+                    Action("Download ${translationAbbreviation(state.location.translationId)}") { model.download() }
                 }
                 state.downloadMessage?.let { Message(it) }
                 Message("Downloaded translations")
-                if (state.downloaded.isEmpty()) Message("No complete downloads yet. Chapters you have read are also cached automatically, except ESV.")
+                if (state.downloaded.isEmpty()) Message("No complete downloads yet. KJV and ASV chapters you have read are also cached automatically. Other translations are never cached.")
                 state.downloaded.forEach { id ->
-                    Action("Read $id") { model.open(state.location.copy(translationId = id)); goBack() }
+                    val abbreviation = translationAbbreviation(id)
+                    Action("Read $abbreviation") { model.open(state.location.copy(translationId = id)); goBack() }
                     if (removing == id) {
-                        Message("Remove all cached $id chapters from this device?")
+                        Message("Remove all cached $abbreviation chapters from this device?")
                         Action("Confirm removal", enabled = state.downloading == null) { model.removeDownload(id); removing = null }
                         Action("Keep download") { removing = null }
                     } else {
-                        Action("Remove $id", enabled = state.downloading == null) { removing = id }
+                        Action("Remove $abbreviation", enabled = state.downloading == null) { removing = id }
                     }
                 }
             }
@@ -275,10 +283,12 @@ private class AboutScreen(activity: SealedLightActivity, model: BibleViewModel) 
     override fun Content() = Page("About Bible", onBack = { goBack() }) {
         LightScrollView(Modifier.weight(1f)) {
             Message("Bible 2.0.0 · Open source · No ads or analytics")
-            Message("Translations, book lists, and uncached chapters are requested over HTTPS from bible.helloao.org. The provider receives your IP address and requested translation and chapter. Downloaded chapters are read locally.")
+            Message("KJV and ASV book lists and uncached chapters are requested over HTTPS from bible.helloao.org. The provider receives your IP address and requested translation and chapter. Downloaded chapters are read locally.")
+            Message("NIV, NLT, and NKJV are provided online through API.Bible via light-bible-api.nathanmollica.workers.dev. No API key is needed on your phone for these translations. Passages are not cached or available for download.")
+            Message("Cloudflare receives your IP address and requested chapter. The service retains IP counters for its last active minute, replaced on the next minute's first request, and monthly request totals to enforce shared reading limits. API.Bible receives the service's requests. No application request logs are kept.")
             Message("If you enable ESV, your API key and passage requests go only to api.esv.org over HTTPS. The key is saved in this app's private settings until you forget it. ESV passages remain in memory only.")
             Message("Reading position, text size, and downloads stay in app-private storage. Device backup behavior is controlled by Android and the Light SDK. Haptics follow your LightOS preference.")
-            Message("Bible texts retain their respective copyright and license terms. ESV use is subject to Crossway's API terms. This tool is not affiliated with Crossway or HelloAO.")
+            Message("Bible texts retain their respective copyright and license terms. NIV, NLT, and NKJV use is subject to API.Bible and publisher terms; ESV use is subject to Crossway's API terms. This tool is not affiliated with these publishers or HelloAO.")
             Message("Built with the Light SDK. SDK compatibility is not Light approval; only Light can approve and sign a Tool Library release.")
         }
     }

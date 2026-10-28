@@ -32,3 +32,4 @@ jobs:
       - run: npx eslint .
       - run: npx tsc --noEmit
       - run: npx jest
+      - run: node --test scripts/hosted-bible/service.spec.mjs

@@ -1,0 +1,13 @@
+{
+  "name": "light-bible-service",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test service.spec.mjs",
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.154.0"
+  }
+}

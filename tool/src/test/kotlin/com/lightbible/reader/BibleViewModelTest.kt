@@ -1,6 +1,9 @@
 package com.lightbible.reader
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModelStore
 import com.lightbible.reader.data.BibleRepository
 import com.lightbible.reader.data.ReadingLocation
@@ -26,6 +29,19 @@ import kotlinx.coroutines.withTimeout
 @OptIn(ExperimentalCoroutinesApi::class)
 class BibleViewModelTest {
     @Test
+    fun savedUnlistedTranslationSwitchesToKjvAndKeepsReadingPosition() = runBlocking {
+        withReader(ReadingLocation("BSB", "REV", 2)) { create ->
+            val model = create(::response)
+            model.awaitPassage("REV", 2)
+            assertEquals(ReadingLocation("eng_kjv", "REV", 2), model.state.value.location)
+            assertEquals("eng_kjv", model.state.value.passage?.translation?.id)
+            val reopened = create(::response)
+            reopened.awaitPassage("REV", 2)
+            assertEquals(ReadingLocation("eng_kjv", "REV", 2), reopened.state.value.location)
+        }
+    }
+
+    @Test
     fun latestChapterSelectionWinsAndSurvivesReopening() = runBlocking {
         withReader { create ->
             val started = CompletableDeferred<Unit>()
@@ -35,12 +51,12 @@ class BibleViewModelTest {
                 response(url)
             }
             model.awaitPassage("GEN", 1)
-            model.open(ReadingLocation("BSB", "GEN", 2))
+            model.open(ReadingLocation("eng_kjv", "GEN", 2))
             withTimeout(10_000) { started.await() }
-            model.open(ReadingLocation("BSB", "REV", 3))
+            model.open(ReadingLocation("eng_kjv", "REV", 3))
             model.awaitPassage("REV", 3)
             blocked.complete(Unit)
-            assertEquals(ReadingLocation("BSB", "REV", 3), model.state.value.location)
+            assertEquals(ReadingLocation("eng_kjv", "REV", 3), model.state.value.location)
             // A new view model reads the real persisted DataStore, not the old model's state.
             create(::response).awaitPassage("REV", 3)
         }
@@ -52,13 +68,13 @@ class BibleViewModelTest {
             val model = create(::response)
             model.awaitPassage("GEN", 1)
             assertNull(model.adjacentChapter(-1))
-            model.open(ReadingLocation("BSB", "GEN", 2))
+            model.open(ReadingLocation("eng_kjv", "GEN", 2))
             model.awaitPassage("GEN", 2)
-            assertEquals(ReadingLocation("BSB", "REV", 2), model.adjacentChapter(1))
+            assertEquals(ReadingLocation("eng_kjv", "REV", 2), model.adjacentChapter(1))
             model.open(model.adjacentChapter(1)!!)
             model.awaitPassage("REV", 2)
-            assertEquals(ReadingLocation("BSB", "GEN", 2), model.adjacentChapter(-1))
-            model.open(ReadingLocation("BSB", "REV", 3))
+            assertEquals(ReadingLocation("eng_kjv", "GEN", 2), model.adjacentChapter(-1))
+            model.open(ReadingLocation("eng_kjv", "REV", 3))
             model.awaitPassage("REV", 3)
             assertNull(model.adjacentChapter(1))
         }
@@ -70,13 +86,23 @@ class BibleViewModelTest {
         }
     }
 
-    private suspend fun withReader(block: suspend (create: (suspend (String) -> String) -> BibleViewModel) -> Unit) {
+    private suspend fun withReader(
+        initialLocation: ReadingLocation? = null,
+        block: suspend (create: (suspend (String) -> String) -> BibleViewModel) -> Unit,
+    ) {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         val directory = createTempDirectory("bible-reader-test-").toFile()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val preferences = PreferenceDataStoreFactory.create(scope = scope) { File(directory, "reader.preferences_pb") }
         val models = ViewModelStore()
         try {
+            initialLocation?.let { location ->
+                preferences.edit {
+                    it[stringPreferencesKey("translation")] = location.translationId
+                    it[stringPreferencesKey("book")] = location.bookId
+                    it[intPreferencesKey("chapter")] = location.chapter
+                }
+            }
             block { fetch ->
                 models.clear()
                 BibleViewModel(BibleRepository(directory) { url, _ -> fetch(url) }, preferences).also {
@@ -92,7 +118,8 @@ class BibleViewModelTest {
     }
 
     private fun response(url: String): String {
-        val translation = """{"id":"BSB","name":"Berean Standard Bible"}"""
+        val id = url.removePrefix("https://bible.helloao.org/api/").substringBefore('/')
+        val translation = """{"id":"$id","name":"$id","language":"eng"}"""
         val genesis = """{"id":"GEN","name":"Genesis","firstChapterNumber":1,"lastChapterNumber":2}"""
         val revelation = """{"id":"REV","name":"Revelation","firstChapterNumber":2,"lastChapterNumber":3}"""
         if (url.endsWith("books.json")) return """{"translation":$translation,"books":[$genesis,$revelation]}"""

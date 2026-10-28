@@ -21,6 +21,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 
+internal class ReadingLimitException : IOException("Reading limit reached. Try again later.")
+
 /**
  * One repository per SDK filesDir. Operations run on IO and are serialized so clearing a
  * download cannot race its completion. Cancel the caller's coroutine to interrupt a download.
@@ -34,6 +36,7 @@ class BibleRepository internal constructor(
 
     private val root = File(filesDir, "bible-cache-v1")
     private val mutex = Mutex()
+    private val hostedBooks = mutableMapOf<String, List<Book>>()
     private val client = if (fetchOverride != null) null else HttpClient(OkHttp) {
         expectSuccess = true
         followRedirects = false
@@ -49,26 +52,49 @@ class BibleRepository internal constructor(
     @Volatile private var closed = false
 
     suspend fun translations(): List<Translation> = operation {
-        val available = translationManifest().translations.filterNot { it.id == "ESV" }
+        // The fixed catalog remains available even when either provider is offline.
+        val available = listOf(
+            Translation("eng_kjv", "King James Version", languageName = "English"),
+            Translation("eng_asv", "American Standard Version", languageName = "English"),
+        ) + hostedTranslations.map { (id, name) -> Translation(id, name, languageName = "English") }
         if (esvApiKey.isNotBlank()) listOf(ESV_TRANSLATION) + available else available
     }
 
     suspend fun books(translationId: String): List<Book> = operation {
-        if (translationId == "ESV") ESV_BOOKS else bookManifest(translationId).books
+        require(translationId in translationAbbreviations) { "Select a supported translation" }
+        when {
+            translationId == "ESV" -> ESV_BOOKS
+            translationId in hostedTranslations -> hostedBooks.getOrPut(translationId) {
+                parseBooks(fetch("$HOSTED_BASE/$translationId/books"), translationId).books
+            }
+            else -> bookManifest(translationId).books
+        }
     }
 
     suspend fun chapter(location: ReadingLocation): Passage = operation {
-        if (location.translationId == "ESV") esvChapter(location) else helloChapter(location)
+        require(location.translationId in translationAbbreviations) { "Select a supported translation" }
+        when {
+            location.translationId == "ESV" -> esvChapter(location)
+            location.translationId in hostedTranslations -> {
+                validateId(location.bookId)
+                require(location.chapter in 1..150) { "Invalid chapter number" }
+                // Licensed text is always fetched, never written to the on-device cache.
+                parseChapter(fetch("$HOSTED_BASE/${location.translationId}/chapters/${location.bookId}.${location.chapter}"), location).also {
+                    require(!it.copyright.isNullOrBlank()) { "Missing publisher attribution" }
+                }
+            }
+            else -> helloChapter(location)
+        }
     }
 
     suspend fun download(translationId: String, onProgress: (Int, Int) -> Unit) = operation {
-        require(translationId != "ESV") { "ESV is network-only and cannot be downloaded" }
+        require(!isOnlineOnlyTranslation(translationId)) { "$translationId is network-only and cannot be downloaded" }
+        // Both navigation manifests must survive offline, even if the first chapter fails.
+        val translations = translationManifest()
+        require(translationId in translationAbbreviations && translations.translations.any { it.id == translationId }) { "Select a supported translation" }
         val directory = translationDirectory(translationId)
         val complete = File(directory, "complete")
         if (complete.exists() && !complete.delete()) throw IOException("Cannot reset download status")
-        // Both navigation manifests must survive offline, even if the first chapter fails.
-        val translations = translationManifest()
-        require(translations.translations.any { it.id == translationId }) { "Unknown translation" }
         val manifest = bookManifest(translationId)
         val total = manifest.books.sumOf { it.lastChapterNumber - it.firstChapterNumber + 1 }
         var completed = 0
@@ -90,7 +116,7 @@ class BibleRepository internal constructor(
         val translations = readCached(File(root, "translations.json"), ::parseTranslations)
             ?: return@operation emptyList()
         translations.translations.filter { translation ->
-            if (translation.id == "ESV") return@filter false
+            if (isOnlineOnlyTranslation(translation.id) || translation.id !in translationAbbreviations) return@filter false
             val directory = translationDirectory(translation.id)
             val complete = File(directory, "complete")
             if (!complete.isFile) return@filter false
@@ -196,7 +222,8 @@ class BibleRepository internal constructor(
         } catch (error: ResponseException) {
             // Do not propagate response bodies or request headers into UI errors/logs.
             val status = error.response.status.value
-            throw IOException(if (status == 429) "Rate limit exceeded. Try again later." else "Bible request failed (HTTP $status)")
+            if (status == 429) throw ReadingLimitException()
+            throw IOException("Bible request failed (HTTP $status)")
         }
     }
 
@@ -253,5 +280,6 @@ class BibleRepository internal constructor(
 
     private companion object {
         const val HELLO_BASE = "https://bible.helloao.org/api"
+        const val HOSTED_BASE = "https://light-bible-api.nathanmollica.workers.dev/v1"
     }
 }

@@ -15,15 +15,83 @@ import kotlinx.coroutines.runBlocking
 
 class BibleRepositoryTest {
     @Test
+    fun curatedCatalogSurvivesOfflineReopenAndRejectsUnlistedDownloads() = runBlocking {
+        withDirectory { directory ->
+            val server = Server()
+            BibleRepository(directory, server::fetch).use { repository ->
+                assertEquals(setOf("eng_kjv", "eng_asv", "NIV", "NLT", "NKJV"), repository.translations().map { it.id }.toSet())
+                assertFailsWith<IllegalArgumentException> { repository.download("SPA") { _, _ -> } }
+                assertFailsWith<IllegalArgumentException> { repository.download("BSB") { _, _ -> } }
+            }
+            server.online = false
+            BibleRepository(directory, server::fetch).use { repository ->
+                assertEquals(setOf("eng_kjv", "eng_asv", "NIV", "NLT", "NKJV"), repository.translations().map { it.id }.toSet())
+                repository.esvApiKey = "test-user-key"
+                assertEquals(setOf("ESV", "eng_kjv", "eng_asv", "NIV", "NLT", "NKJV"), repository.translations().map { it.id }.toSet())
+            }
+        }
+    }
+
+    @Test
+    fun hostedEditionsPreserveAttributionWithoutDeviceCredentialsOrOfflineCopies() = runBlocking {
+        withDirectory { directory ->
+            var online = true
+            var includeCopyright = true
+            val fetch: suspend (String, Map<String, String>) -> String = { url, headers ->
+                if (!online) throw IOException("Offline")
+                assertTrue(headers.isEmpty()) // The ESV key must not be sent to this service.
+                assertTrue(url.startsWith("https://light-bible-api.nathanmollica.workers.dev/v1/"))
+                val id = url.substringAfter("/v1/").substringBefore('/')
+                val translation = """{"id":"$id","name":"$id","languageName":"English"}"""
+                val book = """{"id":"JHN","name":"John","lastChapterNumber":21}"""
+                if (url.endsWith("/books")) """{"translation":$translation,"books":[$book]}"""
+                else {
+                    assertTrue(url.endsWith("/chapters/JHN.3"))
+                    val copyright = if (includeCopyright) ",\"copyright\":\"Publisher attribution\"" else ""
+                    """{"translation":$translation,"book":$book,"chapter":{"number":3,"content":[
+                        {"type":"verse","number":16,"content":["$id licensed passage"]}
+                    ]}$copyright}"""
+                }
+            }
+            BibleRepository(directory, fetch).use { repository ->
+                repository.esvApiKey = "private-esv-key"
+                for (id in listOf("NIV", "NLT", "NKJV")) {
+                    assertEquals(21, repository.books(id).single().lastChapterNumber)
+                    val location = ReadingLocation(id, "JHN", 3)
+                    val passage = repository.chapter(location)
+                    assertEquals(id, passage.translation.id)
+                    assertEquals(listOf(Verse(16, "$id licensed passage")), passage.verses)
+                    assertEquals("Publisher attribution", passage.copyright)
+                    assertFailsWith<IllegalArgumentException> { repository.download(id) { _, _ -> } }
+                    online = false
+                    assertFailsWith<IOException> { repository.chapter(location) }
+                    online = true
+                }
+                includeCopyright = false
+                assertFailsWith<IllegalArgumentException> { repository.chapter(ReadingLocation("NIV", "JHN", 3)) }
+                assertTrue(repository.downloaded().isEmpty())
+            }
+            online = false
+            BibleRepository(directory, fetch).use { repository ->
+                assertTrue(repository.translations().any { it.id == "NIV" })
+                assertFailsWith<IOException> { repository.chapter(ReadingLocation("NIV", "JHN", 3)) }
+            }
+            assertFalse(directory.walkTopDown().filter { it.isFile }.any {
+                it.readText().contains("licensed passage") || it.readText().contains("private-esv-key")
+            })
+        }
+    }
+
+    @Test
     fun preservesFragmentsHeadingsPoetryAndCopyrightWithoutFootnotes() = runBlocking {
         withDirectory { directory ->
             val server = Server()
             BibleRepository(directory, server::fetch).use { repository ->
                 val translation = repository.translations().first()
-                assertEquals("A", translation.englishName)
+                assertEquals("King James Version", translation.englishName)
                 assertEquals("ltr", translation.textDirection)
-                val passage = repository.chapter(ReadingLocation("A", "GEN", 1))
-                assertEquals(Translation("A", "A"), passage.translation)
+                val passage = repository.chapter(ReadingLocation("eng_kjv", "GEN", 1))
+                assertEquals(Translation("eng_kjv", "eng_kjv"), passage.translation)
                 assertEquals(Book("GEN", "Genesis", 1, 2), passage.book)
                 assertEquals(1, passage.number)
                 assertEquals(
@@ -39,7 +107,7 @@ class BibleRepositoryTest {
                 )
                 assertEquals("Public domain", passage.copyright)
                 server.online = false
-                assertEquals(passage, repository.chapter(ReadingLocation("A", "GEN", 1)))
+                assertEquals(passage, repository.chapter(ReadingLocation("eng_kjv", "GEN", 1)))
             }
         }
     }
@@ -49,30 +117,30 @@ class BibleRepositoryTest {
         withDirectory { directory ->
             val server = Server().apply { failChapter = 2 }
             BibleRepository(directory, server::fetch).use { repository ->
-                assertFailsWith<IOException> { repository.download("A") { _, _ -> } }
+                assertFailsWith<IOException> { repository.download("eng_kjv") { _, _ -> } }
                 assertEquals(emptyList(), repository.downloaded())
             }
             server.online = false
             BibleRepository(directory, server::fetch).use { repository ->
-                assertEquals(listOf("A", "AB"), repository.translations().map { it.id })
-                assertEquals(2, repository.books("A").single().lastChapterNumber)
-                assertEquals(1, repository.chapter(ReadingLocation("A", "GEN", 1)).number)
-                assertFailsWith<IOException> { repository.chapter(ReadingLocation("A", "GEN", 2)) }
+                assertEquals(setOf("eng_kjv", "eng_asv", "NIV", "NLT", "NKJV"), repository.translations().map { it.id }.toSet())
+                assertEquals(2, repository.books("eng_kjv").single().lastChapterNumber)
+                assertEquals(1, repository.chapter(ReadingLocation("eng_kjv", "GEN", 1)).number)
+                assertFailsWith<IOException> { repository.chapter(ReadingLocation("eng_kjv", "GEN", 2)) }
                 assertTrue(repository.downloaded().isEmpty())
                 server.online = true
                 server.failChapter = null
                 server.urls.clear()
                 val progress = mutableListOf<Pair<Int, Int>>()
-                repository.download("A") { current, total -> progress += current to total }
+                repository.download("eng_kjv") { current, total -> progress += current to total }
                 assertEquals(listOf(0 to 2, 1 to 2, 2 to 2), progress)
-                assertEquals(listOf("https://bible.helloao.org/api/A/GEN/2.json"), server.urls)
+                assertEquals(listOf("https://bible.helloao.org/api/eng_kjv/GEN/2.json"), server.urls)
             }
             server.online = false
             BibleRepository(directory, server::fetch).use { repository ->
-                assertEquals(listOf("A"), repository.downloaded())
-                assertEquals(2, repository.chapter(ReadingLocation("A", "GEN", 2)).number)
-                repository.download("A") { _, _ -> } // Entirely offline, including both manifests.
-                assertEquals(listOf("A"), repository.downloaded())
+                assertEquals(listOf("eng_kjv"), repository.downloaded())
+                assertEquals(2, repository.chapter(ReadingLocation("eng_kjv", "GEN", 2)).number)
+                repository.download("eng_kjv") { _, _ -> } // Entirely offline, including both manifests.
+                assertEquals(listOf("eng_kjv"), repository.downloaded())
             }
             assertFalse(directory.walkTopDown().any { it.extension == "tmp" })
         }
@@ -86,34 +154,34 @@ class BibleRepositoryTest {
                 BibleRepository(directory, server::fetch).use { repository ->
                     val download = launch {
                         val job = currentCoroutineContext().job
-                        repository.download("A") { current, _ -> if (current == cancelAt) job.cancel() }
+                        repository.download("eng_kjv") { current, _ -> if (current == cancelAt) job.cancel() }
                     }
                     download.join()
                     assertTrue(download.isCancelled)
                     assertTrue(repository.downloaded().isEmpty())
                     server.urls.clear()
-                    repository.download("A") { _, _ -> }
+                    repository.download("eng_kjv") { _, _ -> }
                     assertEquals(2 - cancelAt, server.urls.size)
-                    assertEquals(listOf("A"), repository.downloaded())
+                    assertEquals(listOf("eng_kjv"), repository.downloaded())
                 }
             }
         }
     }
 
     @Test
-    fun clearingExactTranslationDoesNotRemovePrefixNeighbour() = runBlocking {
+    fun clearingOneTranslationDoesNotRemoveAnother() = runBlocking {
         withDirectory { directory ->
             val server = Server()
             BibleRepository(directory, server::fetch).use { repository ->
-                repository.download("A") { _, _ -> }
-                repository.download("AB") { _, _ -> }
-                repository.clearDownload("A")
+                repository.download("eng_kjv") { _, _ -> }
+                repository.download("eng_asv") { _, _ -> }
+                repository.clearDownload("eng_kjv")
                 server.online = false
-                assertEquals(listOf("AB"), repository.downloaded())
-                assertEquals("AB", repository.chapter(ReadingLocation("AB", "GEN", 1)).translation.id)
-                assertFailsWith<IOException> { repository.chapter(ReadingLocation("A", "GEN", 1)) }
-                assertFailsWith<IllegalArgumentException> { repository.clearDownload("../AB") }
-                assertEquals(listOf("AB"), repository.downloaded())
+                assertEquals(listOf("eng_asv"), repository.downloaded())
+                assertEquals("eng_asv", repository.chapter(ReadingLocation("eng_asv", "GEN", 1)).translation.id)
+                assertFailsWith<IOException> { repository.chapter(ReadingLocation("eng_kjv", "GEN", 1)) }
+                assertFailsWith<IllegalArgumentException> { repository.clearDownload("../eng_asv") }
+                assertEquals(listOf("eng_asv"), repository.downloaded())
             }
         }
     }
@@ -123,13 +191,13 @@ class BibleRepositoryTest {
         withDirectory { directory ->
             val server = Server()
             BibleRepository(directory, server::fetch).use { repository ->
-                repository.download("A") { _, _ -> }
+                repository.download("eng_kjv") { _, _ -> }
                 directory.walkTopDown().single { it.name == "2.json" }.writeText("{truncated")
                 assertTrue(repository.downloaded().isEmpty())
                 server.urls.clear()
-                repository.download("A") { _, _ -> }
-                assertEquals(listOf("https://bible.helloao.org/api/A/GEN/2.json"), server.urls)
-                assertEquals(listOf("A"), repository.downloaded())
+                repository.download("eng_kjv") { _, _ -> }
+                assertEquals(listOf("https://bible.helloao.org/api/eng_kjv/GEN/2.json"), server.urls)
+                assertEquals(listOf("eng_kjv"), repository.downloaded())
             }
         }
     }
@@ -191,10 +259,17 @@ class BibleRepositoryTest {
             }
             assertTrue(headers.isEmpty())
             if (url.endsWith("available_translations.json")) {
-                return """{"translations":[{"id":"A","name":"A"},{"id":"AB","name":"AB"}]}"""
+                return """{"translations":[
+                    {"id":"eng_kjv","name":"KJV","language":"eng"},
+                    {"id":"eng_asv","name":"ASV","languageName":"English"},
+                    {"id":"BSB","name":"Berean Standard Bible","language":"eng"},
+                    {"id":"eng_cpb","name":"KJV Cambridge Paragraph Bible","language":"eng"},
+                    {"id":"SPA","name":"English-labelled Spanish","language":"spa","languageName":"English"},
+                    {"id":"UNKNOWN","name":"English"}
+                ]}"""
             }
             val path = url.removePrefix("https://bible.helloao.org/api/").split('/')
-            val translation = """{"id":"${path[0]}","name":"${path[0]}"}"""
+            val translation = """{"id":"${path[0]}","name":"${path[0]}","language":"eng"}"""
             val book = """{"id":"GEN","name":"Genesis","firstChapterNumber":1,"lastChapterNumber":2}"""
             if (path.last() == "books.json") return """{"translation":$translation,"books":[$book]}"""
             val number = path.last().removeSuffix(".json").toInt()

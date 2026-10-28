@@ -9,9 +9,14 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.viewModelScope
 import com.lightbible.reader.data.BibleRepository
 import com.lightbible.reader.data.Book
+import com.lightbible.reader.data.DEFAULT_TRANSLATION_ID
 import com.lightbible.reader.data.Passage
+import com.lightbible.reader.data.ReadingLimitException
 import com.lightbible.reader.data.ReadingLocation
 import com.lightbible.reader.data.Translation
+import com.lightbible.reader.data.isOnlineOnlyTranslation
+import com.lightbible.reader.data.translationAbbreviation
+import com.lightbible.reader.data.translationAbbreviations
 import com.thelightphone.sdk.LightViewModel
 import com.thelightphone.sdk.ui.LightThemeController
 import kotlinx.coroutines.CancellationException
@@ -26,7 +31,7 @@ import kotlinx.coroutines.withContext
 
 data class BibleState(
     val ready: Boolean = false,
-    val location: ReadingLocation = ReadingLocation("BSB", "GEN", 1),
+    val location: ReadingLocation = ReadingLocation(DEFAULT_TRANSLATION_ID, "GEN", 1),
     val passage: Passage? = null,
     val books: List<Book> = emptyList(),
     val translations: List<Translation> = emptyList(),
@@ -60,7 +65,7 @@ class BibleViewModel(
                 val light = saved[LIGHT_BACKGROUND] ?: false
                 if (light) LightThemeController.setLightTheme() else LightThemeController.setDarkTheme()
                 val location = ReadingLocation(
-                    saved[TRANSLATION] ?: "BSB", saved[BOOK] ?: "GEN", saved[CHAPTER] ?: 1,
+                    saved[TRANSLATION] ?: DEFAULT_TRANSLATION_ID, saved[BOOK] ?: "GEN", saved[CHAPTER] ?: 1,
                 )
                 mutableState.update {
                     it.copy(ready = true, location = location, fontSize = (saved[FONT_SIZE] ?: 1).coerceIn(0, 2),
@@ -81,12 +86,15 @@ class BibleViewModel(
         cancelDownload()
         readingJob?.cancel()
         readingJob = viewModelScope.launch {
-            mutableState.update { it.copy(location = location, loading = true, error = null, passage = null, books = emptyList()) }
+            // Keep the reading position when retiring a previously available edition.
+            val supportedLocation = if (location.translationId in translationAbbreviations) location
+                else location.copy(translationId = DEFAULT_TRANSLATION_ID)
+            mutableState.update { it.copy(location = supportedLocation, loading = true, error = null, passage = null, books = emptyList()) }
             try {
-                val books = withContext(Dispatchers.IO) { repository.books(location.translationId) }
+                val books = withContext(Dispatchers.IO) { repository.books(supportedLocation.translationId) }
                 val book = books.find { it.id == location.bookId } ?: books.firstOrNull()
                     ?: error("No books available")
-                val resolved = location.copy(bookId = book.id, chapter = location.chapter.coerceIn(book.firstChapterNumber, book.lastChapterNumber))
+                val resolved = supportedLocation.copy(bookId = book.id, chapter = location.chapter.coerceIn(book.firstChapterNumber, book.lastChapterNumber))
                 mutableState.update { it.copy(location = resolved, books = books) }
                 val passage = withContext(Dispatchers.IO) { repository.chapter(resolved) }
                 preferences.edit {
@@ -97,8 +105,10 @@ class BibleViewModel(
                 mutableState.update { it.copy(location = resolved, passage = passage, books = books, loading = false) }
             } catch (e: CancellationException) {
                 throw e
+            } catch (_: ReadingLimitException) {
+                mutableState.update { it.copy(loading = false, error = "Reading limit reached. Try again later, or choose KJV or ASV.") }
             } catch (_: Exception) {
-                mutableState.update { it.copy(loading = false, error = "Unable to load this chapter. Check your connection or choose a downloaded translation. ESV requires a valid API key.") }
+                mutableState.update { it.copy(loading = false, error = "Unable to load this chapter. Check your connection or choose a downloaded translation. NIV, NLT, NKJV, and ESV are online-only. ESV requires a valid API key.") }
             }
         }
     }
@@ -162,7 +172,7 @@ class BibleViewModel(
     }
 
     fun download() {
-        if (downloadJob?.isActive == true || state.value.location.translationId == "ESV") return
+        if (downloadJob?.isActive == true || isOnlineOnlyTranslation(state.value.location.translationId)) return
         val id = state.value.location.translationId
         mutableState.update { it.copy(downloading = id, progress = 0 to 0, downloadMessage = null) }
         downloadJob = viewModelScope.launch {
@@ -171,7 +181,7 @@ class BibleViewModel(
                     repository.download(id) { done, total -> mutableState.update { it.copy(progress = done to total) } }
                 }
                 refreshDownloaded()
-                mutableState.update { it.copy(downloadMessage = "$id is ready for offline reading.") }
+                mutableState.update { it.copy(downloadMessage = "${translationAbbreviation(id)} is ready for offline reading.") }
             } catch (e: CancellationException) {
                 mutableState.update { it.copy(downloadMessage = "Download paused. Cached chapters are kept; tap download to resume.") }
                 throw e
@@ -191,7 +201,7 @@ class BibleViewModel(
             try {
                 withContext(Dispatchers.IO) { repository.clearDownload(id) }
                 refreshDownloaded()
-                mutableState.update { it.copy(downloadMessage = "Removed downloaded $id.") }
+                mutableState.update { it.copy(downloadMessage = "Removed downloaded ${translationAbbreviation(id)}.") }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

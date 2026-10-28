@@ -8,14 +8,36 @@ granted only by Light after its Dashboard build, signing, and review process.
 
 ## Features
 
-- Multiple translations from the [HelloAO Bible API](https://bible.helloao.org).
+- King James Version (KJV) and American Standard Version (ASV) from the
+  [HelloAO Bible API](https://bible.helloao.org).
+- NIV 2011, NLT, and NKJV through the hosted API.Bible service, with no key entry
+  required on the phone. These editions are online-only and never cached.
 - Book/chapter selection, previous/next buttons, and horizontal chapter swipes.
-- Saved reading position, three text sizes, black/white background, RTL text.
-- Cache-first reading and resumable, cancellable full-translation downloads.
+- Saved reading position, three text sizes, black/white background.
+- Cache-first KJV/ASV reading and resumable, cancellable full-translation downloads.
 - Optional ESV using the reader's own Crossway API key; ESV is online-only and
   never cached or offered for download.
 - Light SDK navigation/back bar, keyboard, typography, and LightOS haptics.
 - No ads, analytics, account registration, push notifications, or background jobs.
+
+KJV is the default. Previously selected editions outside KJV, ASV, ESV, NIV,
+NLT, and NKJV switch to KJV, keeping the book and chapter where available. Downloads of
+retired editions are hidden, not deleted. Reader/settings/download labels use
+standard abbreviations; provider IDs stay unchanged in requests and storage.
+
+CSB, NASB, NRSV/NRSVue, MSG, and NIrV are not available through
+the current integrations. Adding them requires a licensed content provider;
+they are not shown as selectable editions or substituted with another text.
+ESV continues to use the reader's phone-side key under
+[Crossway's terms](https://api.esv.org/). Do not embed a shared key in the APK
+or repository.
+
+The [hosted service](scripts/hosted-bible/README.md) keeps the API.Bible key
+server-side and enforces shared reading limits. Its public endpoint is
+`https://light-bible-api.nathanmollica.workers.dev`; it is not a web reader.
+Deployment does not establish publisher approval for Light Tool Library
+distribution: confirm the API.Bible native-only analytics exemption applies
+to that store before submission.
 
 ## Native development
 
@@ -78,8 +100,9 @@ and [Tool Guidelines](https://github.com/lightphone/light-sdk/blob/main/TOOL_GUI
 
 1. Run `make test` and `make build`, and verify on a Light Phone III running a
    compatible LightOS release. Check back navigation, keyboard/filtering, swipes,
-   RTL, both backgrounds, all text sizes, offline restart, download interruption,
-   removal, and optional ESV with your own key. Capture genuine device screenshots.
+   English-only selection, both backgrounds, all text sizes, offline restart, download interruption,
+   removal, NIV/NLT/NKJV online reading and copyright, and optional ESV with your own key.
+   Capture genuine device screenshots.
 2. Review third-party Bible text licenses and Crossway's API terms. Source-code
    licensing does not grant redistribution rights to every Bible translation.
 3. Ensure this repository and the intended commit are public. In the Light
@@ -113,6 +136,14 @@ Offline cached reads do not contact it. ESV requests send the selected passage
 and your API key **only** to `api.esv.org` over HTTPS. The key is held in app-private
 settings until forgotten; ESV passage text stays in memory only. Settings and
 cached translations use app-private storage; Android/SDK backup policies apply.
+NIV/NLT/NKJV requests go through the hosted Cloudflare Worker to API.Bible. Neither
+the app nor the Worker caches their passage text. Publisher attribution appears
+with every chapter. Cloudflare receives the IP address and requested route;
+the service stores IP counters for the last active minute and monthly aggregate
+counts to enforce quotas, with application logging disabled. The next minute's
+first request replaces the prior IP counters. API.Bible receives upstream
+requests from the service, not the phone's API key. See the service documentation
+for quota limits and their abuse/billing-cycle limitations.
 Downloads run while the app is in use and pause when it is backgrounded.
 Opening another chapter or loading the translation catalog also pauses a bulk
 download so reading is not blocked behind it.

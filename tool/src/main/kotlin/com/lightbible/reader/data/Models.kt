@@ -2,6 +2,17 @@ package com.lightbible.reader.data
 
 import kotlinx.serialization.Serializable
 
+internal const val DEFAULT_TRANSLATION_ID = "eng_kjv"
+internal val hostedTranslations = mapOf(
+    "NIV" to "New International Version",
+    "NLT" to "New Living Translation",
+    "NKJV" to "New King James Version",
+)
+internal val translationAbbreviations = mapOf("eng_kjv" to "KJV", "ESV" to "ESV", "eng_asv" to "ASV") +
+    hostedTranslations.keys.associateWith { it }
+internal fun translationAbbreviation(id: String): String = translationAbbreviations[id] ?: id
+internal fun isOnlineOnlyTranslation(id: String): Boolean = id == "ESV" || id in hostedTranslations
+
 @Serializable
 data class Translation(
     val id: String = "",
