@@ -1,7 +1,7 @@
 [tool]
 id = "com.lightbible.reader"
 label = "Bible"
-versionCode = 20000
+versionCode = 20001
 versionName = "2.0.0"
 permissions = ["android.permission.INTERNET"]
 capabilities = []

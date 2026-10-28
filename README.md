@@ -43,7 +43,7 @@ to that store before submission.
 
 The submitted application lives entirely in `tool/`. Its identity, version,
 permissions, and LightOS server are declared in `tool/lighttool.toml`:
-`com.lightbible.reader`, version `2.0.0` / `20000`, server `com.lightos`.
+`com.lightbible.reader`, version `2.0.0` / `20001`, server `com.lightos`.
 The SDK generates the Android manifest; do not add a custom one.
 
 Light Dashboard also requires the repository-root `gradle.properties` during
