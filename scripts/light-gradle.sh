@@ -6,6 +6,11 @@ sdk="$root/.light-sdk"
 # Official Light SDK 0.2.2. Update deliberately, then rerun lint and tests.
 revision=92b8b862de5be677a3c68146ba98adf5bf19d7cc
 
+if [[ ! -f "$root/gradle.properties" ]]; then
+  echo 'Missing root gradle.properties: Light Dashboard requires it for build preflight.' >&2
+  exit 1
+fi
+
 if [[ ! -d "$sdk/.git" ]]; then
   git init --quiet "$sdk"
   git -C "$sdk" remote add origin https://github.com/lightphone/light-sdk.git

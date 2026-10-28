@@ -24,6 +24,11 @@ permissions, and LightOS server are declared in `tool/lighttool.toml`:
 `com.lightbible.reader`, version `2.0.0` / `20000`, server `com.lightos`.
 The SDK generates the Android manifest; do not add a custom one.
 
+Light Dashboard also requires the repository-root `gradle.properties` during
+build preflight. Keep its `sdkGroup` and `sdkVersion` aligned with the SDK pinned
+in `scripts/light-gradle.sh`; the ignored `.light-sdk/gradle.properties` used by
+local builds does not replace this published submission file.
+
 Prerequisites: Git, Java 17, and Android SDK platform 36/build-tools 36.0.0.
 The existing `.mise.toml` installs the toolchain; `make deps` automates setup on
 Linux orbs and accepts Android SDK licenses non-interactively.
